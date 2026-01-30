@@ -9,7 +9,7 @@ connectDB();
 const app = express();
 app.use(
   cors({
-    origin: ["http://localhost:3000", "http://localhost:3001","https://nomnow-1.onrender.com"],
+    origin: ["http://localhost:3000", "http://localhost:3001","https://nomnow-1.onrender.com","https://nomnow-restaurant.onrender.com"],
     credentials: true,
   }),
 );
@@ -26,6 +26,7 @@ app.use("/api/user", require("./routes/user.routes"));
 app.listen(process.env.PORT || 4000, () => {
   console.log(`Server running on port ${process.env.PORT || 4000}`);
 });
+
 
 
 
