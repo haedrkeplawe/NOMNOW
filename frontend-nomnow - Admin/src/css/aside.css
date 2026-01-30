@@ -1,0 +1,79 @@
+aside.sidebar {
+  width: 307px;
+  background: var(--primary-background);
+  border-right: 1.1px solid var(--primary-border);
+  padding: 20px 10px;
+  transition: 0.4s;
+}
+aside.sidebar.close {
+  width: 61px;
+}
+aside.sidebar .top {
+  width: 100%;
+  margin-bottom: 8px;
+  font-size: 25px;
+  text-align: end;
+  right: 1px;
+  position: relative;
+}
+aside.sidebar .top .icon {
+  background: var(--primary-orange);
+  color: white;
+  width: 35px;
+  height: 33px;
+  padding: 3px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+aside.sidebar .links {
+}
+aside.sidebar .links > div {
+}
+aside.sidebar .links {
+}
+aside.sidebar .links a {
+  display: flex;
+  gap: 10px;
+  padding: 11px;
+  width: 100%;
+  border-radius: 13px;
+  margin-bottom: 5px;
+  background-color: var(--button-in-aside);
+  transition: 0.3s;
+  color: var(--primary-text);
+}
+aside.sidebar .links a:hover {
+  background-color: var(--primary-hover);
+}
+aside.sidebar .links a.orange {
+  background: var(--primary-orange-gradient);
+  color: white;
+}
+aside.sidebar .links .icon {
+  font-size: 20px;
+}
+aside.sidebar .links h3 {
+  font-size: 14px;
+  font-weight: 400;
+}
+aside.sidebar .links h3.close {
+  display: none;
+}
+aside.sidebar .links a.orange h3 {
+  color: white;
+}
+main.main > div {
+  width: 100%;
+  background: var(--background-color);
+  padding: 20px;
+  overflow-y: auto; /* فقط عمودي حسب الحاجة */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  position: relative;
+}
+main.main > div::-webkit-scrollbar {
+  display: none;
+}
+aside.sidebar > div > div {
+  height: 200px;
+}

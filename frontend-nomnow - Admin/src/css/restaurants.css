@@ -1,0 +1,353 @@
+.restaurants-page .cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-top: 30px;
+  margin-bottom: 60px;
+}
+.restaurants-page .card {
+  display: flex;
+  flex-direction: column;
+  background: var(--primary-background);
+  border-radius: 15px;
+  padding: 20px;
+  color: var(--primary-text);
+  border: 1px solid var(--secondary-border);
+  gap: 10px;
+}
+.restaurants-page .card > span {
+  width: 100%;
+  height: 1px;
+  background: var(--secondary-border);
+  margin: 10px 0 6px 0px;
+}
+.restaurants-page .card p {
+  color: var(--secondary-text);
+  font-size: 14px;
+}
+.restaurants-page .card .one {
+  display: flex;
+  justify-content: space-between;
+}
+.restaurants-page .card .one .left {
+  display: flex;
+  gap: 10px;
+}
+.restaurants-page .one .left .img .icon {
+  width: 52px;
+  height: 52px;
+  background: var(--primary-orange-gradient);
+  color: white;
+  padding: 13px;
+  border-radius: 18px;
+}
+.restaurants-page .one .left img {
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+}
+.restaurants-page .card .one .left h3 {
+  font-size: 18px;
+  font-weight: 400;
+}
+.restaurants-page .card .one .left p {
+  margin-top: 3px;
+}
+.restaurants-page .one .right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.restaurants-page .card .one .right p {
+  color: #ca3500;
+  background: #ffedd4;
+  padding: 2px 6px;
+  border-radius: 12px;
+}
+.restaurants-page .card .one .right p.green {
+  color: #008236;
+  background: #dcfce7;
+}
+.restaurants-page .card .tow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.restaurants-page .card .tow p {
+  margin-bottom: 3px;
+}
+.restaurants-page .card .tow span {
+  font-size: 18px;
+  font-weight: 500;
+}
+.restaurants-page .card .tow .icon {
+  color: #ffd600;
+}
+.restaurants-page .card .three div {
+  display: flex;
+  justify-content: space-between;
+}
+.restaurants-page .card .three h3 {
+  font-size: 18px;
+  font-weight: 400;
+}
+.restaurants-page .card .three .top {
+  margin-bottom: 10px;
+}
+.restaurants-page .card .three .buttom {
+  color: var(--primary-orange);
+}
+.restaurants-page .card .fore {
+  display: flex;
+  gap: 10px;
+}
+.restaurants-page .card .fore button {
+  cursor: pointer;
+  width: calc(100% - 50px);
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  color: var(--primary-orange);
+  background: #fff7ed;
+}
+.restaurants-page .card .fore span {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--secondary-border);
+  width: 50px;
+  border-radius: 12px;
+  font-size: 16px;
+  background-color: var(--background-color);
+}
+.restaurants-page {
+  width: 100vw;
+  height: 100vh;
+  background: rgba(8, 8, 8, 0.425);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 120;
+}
+.restaurants-page .popp {
+  width: 80%;
+  max-width: 700px;
+  max-height: 95vh;
+  overflow: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.restaurants-page .popp::-webkit-scrollbar {
+  display: none;
+}
+.restaurants-page .details .detail-card .one .right p {
+  color: #ca3500;
+  background: #ffedd4;
+  padding: 2px 6px;
+  border-radius: 12px;
+}
+.restaurants-page .details .detail-card .one .right p.green {
+  color: #008236;
+  background: #dcfce7;
+}
+.restaurants-page .details .detail-card .infos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 20px;
+}
+.restaurants-page .details .detail-card .infos h2 {
+  font-size: 16px;
+  color: var(--primary-text);
+}
+.restaurants-page .details .detail-card .infos .info {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0px;
+}
+.restaurants-page .details .detail-card .infos .info .icon {
+  color: var(--primary-orange);
+  font-size: 20px;
+}
+.restaurants-page .details .detail-card .infos .info p {
+  margin-bottom: 2px;
+  color: var(--secondary-text);
+  font-size: 12px;
+}
+.restaurants-page .details .detail-card .infos .info h4 {
+  color: var(--primary-text);
+  font-weight: 600;
+  font-size: 14px;
+}
+.restaurants-page .details .detail-card .buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 10px;
+}
+.restaurants-page .details .detail-card .buttons button {
+  display: flex;
+  padding: 10px 14px;
+  gap: 10px;
+  border-radius: 6px;
+  color: white;
+  background: var(--primary-orange-gradient);
+  border: none;
+  justify-content: center;
+}
+.restaurants-page .details .detail-card .buttons .view {
+  background: #eff6ff;
+  color: #155dfc;
+}
+.restaurants-page .details .detail-card .buttons .unblocked-restaurant {
+  color: #00a63e;
+  background: #f0fdf4;
+}
+.restaurants-page .details .detail-card .buttons .blocked-restaurant {
+  color: #e7000b;
+  background: #fef2f2;
+}
+.restaurants-page .details .detail-card .buttons .analytics {
+  background: #eff6ff;
+  color: #364153;
+}
+.restaurants-page .form .one .left .icon {
+  background: var(--primary-orange-gradient);
+  color: white;
+}
+.restaurants-page .form .inputs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.restaurants-page .form .input {
+  display: flex;
+  flex-direction: column;
+}
+
+.restaurants-page .form .input label {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--primary-text);
+}
+
+.restaurants-page .form .input input {
+  padding: 10px;
+  border: 1px solid var(--secondary-border);
+  border-radius: 6px;
+  background: var(--third-background);
+  color: var(--primary-text);
+}
+.restaurants-page .form button {
+  padding: 13px;
+  border-radius: 8px;
+  background: var(--primary-orange-gradient);
+  color: white;
+  border: none;
+  text-align: center;
+}
+.restaurants-page .form button.cancel {
+  background: white;
+  color: black;
+  border: 1px solid var(--secondary-border);
+}
+.restaurants-page .resaurant-analytics {
+  max-width: 1000px;
+  width: 90%;
+}
+.restaurants-page .resaurant-analytics .one .left .icon {
+  color: white;
+  background: linear-gradient(45deg, #9810fa, #ad46ff);
+}
+.restaurants-page .resaurant-analytics .summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+.restaurants-page .resaurant-analytics .summary > div {
+  background: var(--primary-background);
+  padding: 20px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.restaurants-page .resaurant-analytics .summary > div > div {
+  display: flex;
+  gap: 8px;
+}
+.restaurants-page .resaurant-analytics .summary .revenue {
+  background: linear-gradient(45deg, #dcfce7, #f0fdf4);
+  color: #008236;
+}
+.restaurants-page .resaurant-analytics .summary .rating {
+  color: #ca3500;
+  background: linear-gradient(45deg, #fff7ed, #ffedd4);
+}
+.restaurants-page .resaurant-analytics .summary .customers {
+  color: #8200db;
+  background: linear-gradient(45deg, #faf5ff, #f3e8ff);
+}
+.restaurants-page .resaurant-analytics .summary .orders {
+  color: #1447e6;
+  background: linear-gradient(45deg, #eff6ff, #dbeafe);
+}
+.restaurants-page .resaurant-analytics .summary .icon {
+  color: inherit;
+}
+.restaurants-page .resaurant-analytics .summary p {
+  color: inherit;
+  font-size: 15px;
+}
+.restaurants-page .resaurant-analytics .summary h2 {
+  color: inherit;
+}
+.restaurants-page .resaurant-menu {
+  max-width: 630px;
+  width: 90%;
+}
+.restaurants-page .resaurant-menu .cart .left {
+  display: flex;
+  gap: 12px;
+}
+.restaurants-page .resaurant-menu .one .left .icon {
+  color: white;
+  background: linear-gradient(45deg, #00c950, #00a63e);
+}
+.restaurants-page .resaurant-menu .cart .left img {
+  width: 55px;
+  height: 55px;
+  border-radius: 12px;
+}
+.restaurants-page .resaurant-menu .cart {
+  display: flex;
+  justify-content: space-between;
+  background: var(--background-color);
+  border-radius: 12px;
+  padding: 7px;
+  margin-bottom: 15px;
+}
+.restaurants-page .resaurant-menu .cart .info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.restaurants-page .resaurant-menu .cart .info h2 {
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--primary-text);
+}
+.restaurants-page .resaurant-menu .cart .info p {
+  color: #1447e6;
+  background: #dbeafe;
+  padding: 3px 8px;
+  border-radius: 16px;
+  font-size: 12px;
+}
+.restaurants-page .resaurant-menu .cart .price {
+  font-size: 20px;
+  color: var(--primary-orange);
+}

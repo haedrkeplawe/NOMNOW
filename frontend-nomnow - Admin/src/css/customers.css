@@ -1,0 +1,262 @@
+.customers-page .summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+.customers-page .summary > div {
+  background: var(--primary-background);
+  padding: 17px;
+  border-radius: 12px;
+}
+.customers-page .summary .icon {
+  color: var(--primary-orange);
+  font-size: 25px;
+}
+.customers-page .summary p {
+  color: var(--secondary-text);
+}
+.customers-page .summary h2 {
+  color: var(--primary-text);
+}
+
+.customers-page .menu {
+  display: flex;
+  gap: 10px;
+  background: var(--primary-background);
+  padding: 13px 12px;
+  border-radius: 12px;
+  margin: 20px 0;
+  box-shadow: 0 0 0px 1px var(--primary-shadow);
+}
+.customers-page .menu button {
+  display: flex;
+  padding: 8px 15px;
+  gap: 10px;
+  border-radius: 6px;
+  border: none;
+  color: #2d2d2d;
+}
+.customers-page .menu button.active {
+  background: var(--primary-orange);
+  color: white;
+}
+
+.customers-page .menu-items {
+  color: var(--primary-text);
+  margin-top: 20px;
+}
+.customers-page .menu-items .head {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr 0.3fr;
+  border: 1px solid var(--primary-border);
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 15px 15px 0px 0px;
+  border-bottom: 0;
+}
+.customers-page .menu-items .head h3 {
+  font-weight: 500;
+  color: var(--secondary-text);
+}
+.customers-page .menu-items .item {
+  display: grid;
+  grid-template-columns: 2fr 2fr 1fr 1fr 1fr 1fr 0.3fr;
+  border: 1px solid var(--primary-border);
+  padding: 12px;
+  font-size: 14px;
+  background-color: var(--primary-background);
+  align-items: center;
+  border-bottom: 0;
+}
+.customers-page .menu-items .item:last-child {
+  border-radius: 0px 0px 15px 15px;
+  border-bottom: 1px solid var(--primary-border);
+}
+.customers-page .menu-items .item .customer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.customers-page .menu-items .item .customer .img img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+.customers-page .menu-items .item .customer .icon {
+  background: #ffd6a7;
+  color: #f54900;
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  border-radius: 50%;
+}
+.customers-page .menu-items .item .customer .text p {
+  color: var(--secondary-text);
+}
+.customers-page .menu-items .item .contact {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.customers-page .menu-items .item .contact > div {
+  display: flex;
+  gap: 5px;
+  color: var(--secondary-text);
+}
+.customers-page .menu-items .item .spend {
+  color: #00a63e;
+  font-weight: 500;
+}
+.customers-page .menu-items .item .rating {
+  display: flex;
+  gap: 8px;
+}
+.customers-page .menu-items .item .rating .icon {
+  color: #f0b100;
+}
+.customers-page .menu-items .item .status {
+  color: #008236;
+  background: #dcfce7;
+  width: fit-content;
+  padding: 3px 6px;
+  border-radius: 13px;
+}
+.customers-page .menu-items .item .status.blocked {
+  background-color: #ffedd4;
+  color: #ca3500;
+}
+.customers-page .showcustomer {
+  width: 80%;
+  max-width: 630px;
+}
+.customers-page .showcustomer .one {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.customers-page .showcustomer .one .img .icon {
+  color: var(--primary-orange);
+  background: linear-gradient(45deg, #ffd6a7, #ffedd4);
+  width: 56px;
+  height: 56px;
+  padding: 8px;
+  border-radius: 11px;
+}
+.customers-page .showcustomer .one .text h2 {
+  color: var(--primary-text);
+  font-size: 20px;
+}
+.customers-page .showcustomer .one .text p {
+  color: var(--secondary-text);
+  font-size: 13px;
+  margin-bottom: 1px;
+}
+.customers-page .showcustomer .one .text .status {
+  display: flex;
+  gap: 5px;
+}
+.customers-page .showcustomer .status span {
+  color: #008236;
+  background: #dcfce7;
+  padding: 1px 5px;
+  border-radius: 13px;
+  font-size: 13px;
+}
+.customers-page .showcustomer .status.blocked span {
+  background-color: #ffedd4;
+  color: #ca3500;
+}
+
+.customers-page .showcustomer .tow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+.customers-page .showcustomer .tow > div {
+  padding: 17px;
+  border-radius: 12px;
+}
+.customers-page .showcustomer .tow .order {
+  background: linear-gradient(45deg, #fff7ed, #ffedd4);
+}
+.customers-page .showcustomer .tow .rating {
+  background: linear-gradient(45deg, #fff7ed, #ffedd4);
+}
+.customers-page .showcustomer .tow .total {
+  background: linear-gradient(45deg, #f0fdf4, #dcfce7);
+}
+.customers-page .showcustomer .tow .icon {
+  font-size: 25px;
+}
+.customers-page .showcustomer .tow .order .icon {
+  color: #ff6900;
+}
+.customers-page .showcustomer .tow .rating .icon {
+  color: #f0b100;
+}
+.customers-page .showcustomer .tow .total .icon {
+  color: #00c950;
+}
+.customers-page .showcustomer .tow p {
+  color: rgb(77 76 76);
+}
+.customers-page .showcustomer .three {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 15px;
+}
+.customers-page .showcustomer .three > div {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.customers-page .showcustomer .three > div h2 {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--primary-text);
+}
+.customers-page .showcustomer .three > div p {
+  font-weight: 400;
+  color: var(--secondary-text);
+  font-size: 14px;
+}
+.customers-page .showcustomer .three .documents.pending p {
+  color: var(--primary-orange);
+}
+.customers-page .showcustomer .three > div h4 {
+  font-weight: 500;
+  color: var(--primary-text);
+}
+.customers-page .showcustomer .three .left .item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.customers-page .showcustomer .three .left .item .icon {
+  color: var(--primary-orange);
+}
+.customers-page .showcustomer .three .right > div {
+  display: flex;
+  justify-content: space-between;
+}
+.customers-page .showcustomer .fore {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  margin: 17px 0px;
+}
+.customers-page .showcustomer .fore button {
+  padding: 11px 18px;
+  border-radius: 12px;
+  border: none;
+}
+.customers-page .showcustomer .fore button.suspend {
+  color: #e7000b;
+  background-color: #fef2f2;
+}
+.customers-page .showcustomer .fore button.approve {
+  background: #f0fdf4;
+  color: #00a63e;
+}
