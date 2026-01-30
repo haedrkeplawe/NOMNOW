@@ -22,8 +22,8 @@ app.use(cookieParser());
 app.use("/api/admin", require("./routes/admin.routes"));
 app.use("/api/restaurant", require("./routes/restaurant.routes"));
 app.use("/api/user", require("./routes/user.routes"));
-app.use("/api/driver", require("./routes/driver.routes"));
 
 app.listen(process.env.PORT || 4000, () => {
   console.log(`Server running on port ${process.env.PORT || 4000}`);
 });
+
