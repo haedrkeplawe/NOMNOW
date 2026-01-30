@@ -1,0 +1,168 @@
+.setting-page {
+}
+
+.setting-page > .text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.setting-page > .text > div h2 {
+  font-size: 29px;
+  font-weight: 400;
+  color: var(--primary-text);
+}
+.setting-page > .text > div p {
+  color: #837f7f;
+}
+
+.setting-page .profile {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  border-radius: 12px;
+  margin: 20px 0;
+  border: 1px solid #9188884a;
+  background: var(--primary-background);
+}
+
+.setting-page form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  color: var(--primary-text);
+}
+.setting-page form .map {
+  position: relative;
+}
+.setting-page form .map button {
+  color: white;
+  background: var(--primary-orange-gradient);
+  padding: 10px;
+  width: 150px;
+  position: absolute;
+  right: 13px;
+  top: 10px;
+  border-radius: 10px;
+  border: sienna;
+}
+.setting-page form .image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.setting-page form img {
+  border-radius: 13px;
+  width: 55px;
+  height: 55px;
+}
+.setting-page form .image .img {
+  padding: 8px 9px;
+  border-radius: 13px;
+  color: #2a2a2a;
+  background: var(--primary-orange-gradient);
+  color: white;
+}
+.setting-page form .image .img .icon {
+  font-size: 24px;
+}
+.setting-page form .image h2 {
+  font-size: 20px;
+  font-weight: 400;
+}
+.setting-page form .image p {
+  color: #837f7f;
+  font-size: 14px;
+}
+.setting-page form .inputs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.setting-page form .input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.setting-page form .input label {
+  color: var(--secondary-text);
+}
+.setting-page form .input input {
+  padding: 9px;
+  border-radius: 4px;
+  border: 1px solid var(--secondary-border);
+  color: var(--primary-text);
+  background: var(--background-color);
+}
+
+.setting-page form textarea {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--secondary-border);
+  width: 100%;
+  height: 100px;
+  resize: none;
+  overflow-y: auto;
+  color: var(--primary-text);
+  background: var(--background-color);
+}
+
+.setting-page form .image-upload {
+  padding: 10px;
+  border-radius: 4px;
+  border: 1px solid var(--secondary-border);
+  width: 100%;
+  height: 170px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: var(--background-color);
+}
+.setting-page form .image-upload .placeholder {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.setting-page form .image-upload .placeholder .img {
+  padding: 10px 10px;
+  border-radius: 50%;
+  color: #2a2a2a;
+  background: var(--primary-orange-gradient);
+  color: white;
+  font-size: 27px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.setting-page form .image-upload .placeholder img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-bottom: 10px;
+}
+.setting-page form .image-upload .placeholder p {
+  color: #837f7f;
+  font-size: 14px;
+}
+.setting-page form .buttons {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0;
+  flex-direction: row;
+}
+.setting-page form button {
+  width: 200px;
+  padding: 10px;
+  border-radius: 9px;
+  border: 1px solid var(--primary-border);
+  background: white;
+  color: #3b3b3b;
+}
+
+.setting-page form button.orange {
+  border: none;
+  background: var(--primary-orange);
+  color: white;
+}

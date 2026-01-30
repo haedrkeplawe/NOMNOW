@@ -1,0 +1,432 @@
+.menu-management .globale-menu {
+  justify-content: space-between;
+}
+.menu-management .globale-menu > div {
+  display: flex;
+  gap: 10px;
+}
+.menu-management .globale-menu button.cat {
+  position: relative;
+}
+.menu-management .globale-menu button.cat .icon {
+  position: absolute;
+  top: 72%;
+  right: -5px;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 5px;
+  width: 20px;
+  height: 20px;
+  background: #006c13;
+  color: white;
+  border-radius: 50%;
+  display: none;
+  opacity: 0.8;
+}
+.menu-management .globale-menu button.cat .delete-icon {
+  background: #c70000;
+  left: -5px;
+}
+.menu-management .globale-menu button.active .icon {
+  display: block;
+}
+.menu-management .menu-items {
+  color: var(--primary-text);
+}
+.menu-management .menu-items .head {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 3fr 1.4fr 1fr;
+  border: 1px solid var(--primary-border);
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 15px 15px 0px 0px;
+  border-bottom: 0;
+}
+.menu-management .menu-items .head h3 {
+  font-weight: 500;
+  color: var(--secondary-text);
+}
+.menu-management .menu-items .item {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr 3fr 1.4fr 1fr;
+  border: 1px solid var(--primary-border);
+  padding: 12px;
+  font-size: 14px;
+  background-color: var(--primary-background);
+  align-items: center;
+  border-bottom: 0;
+}
+.menu-management .menu-items .item:last-child {
+  border-radius: 0px 0px 15px 15px;
+  border-bottom: 1px solid var(--primary-border);
+}
+.menu-management .menu-items .item .name {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.menu-management .menu-items .item .name .image {
+  width: 45px;
+  height: 45px;
+  border-radius: 8px;
+  background: var(--primary-orange-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+.menu-management .menu-items .item .category {
+  color: #1447e6;
+  padding: 5px 14px 5px 14px;
+  border-radius: 14px;
+  width: fit-content;
+  background: #eff6ff;
+}
+.menu-management .menu-items .item .description {
+  width: 90%;
+  overflow: hidden;
+  height: 20px;
+  color: var(--secondary-text);
+}
+
+.menu-management .menu-items .item .status {
+  position: relative;
+  padding: 4px 14px 4px 10px;
+  border-radius: 14px;
+  width: fit-content;
+  display: flex;
+  align-items: center;
+}
+.menu-management .menu-items .item .status.green {
+  border: 1px solid #b9f8cf;
+  color: green;
+  background: #00800014;
+}
+.menu-management .menu-items .item .status.red {
+  border: 1px solid #f8c0b9;
+  color: red;
+  background: #802f0014;
+}
+
+.menu-management .menu-items .item .status .icon {
+  content: "";
+  display: inline-block;
+  height: 14px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.navbar .menu .left .condition.green .icon {
+  color: green;
+}
+.navbar .menu .left .condition.red .icon {
+  color: red;
+}
+.menu-management .menu-items .item .action {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.menu-management .menu-items .item .action .edit {
+  color: #4e4e4e;
+  cursor: pointer;
+}
+.menu-management .menu-items .item .action .delete {
+  color: red;
+  cursor: pointer;
+}
+.menu-management .create-food {
+  width: 90%;
+  max-height: 95vh;
+  overflow: scroll;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  max-width: 649px;
+}
+
+.menu-management .create-food::-webkit-scrollbar {
+  display: none;
+}
+.menu-management .create-food .left .icon {
+  background: var(--primary-orange-gradient);
+  color: white;
+}
+.menu-management .create-food form {
+  background: var(--primary-background);
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 700px;
+  margin: 20px auto;
+  color: var(--secondary-text);
+}
+.menu-management .create-food form > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-management .create-food form .image-upload {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 183px;
+  border: 1px solid #c7c3c3;
+  border-radius: 18px;
+}
+
+.menu-management .create-food form .image-upload .upload-box .placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.menu-management .create-food form .image-upload img {
+  height: 170px;
+}
+
+.menu-management .create-food form input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #9188883b;
+  background: var(--background-color);
+  color: var(--primary-text);
+}
+
+.menu-management .create-food form .status-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.menu-management .create-food form .toggle {
+  width: 130px;
+  height: 38px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  transition: 0.3s;
+  position: relative;
+  font-size: 14px;
+}
+
+.menu-management .create-food form .toggle.on {
+  background: #2ecc71;
+}
+
+.menu-management .create-food form .toggle.off {
+  background: #e74c3c;
+}
+
+.menu-management .create-food form .toggle .circle {
+  width: 30px;
+  height: 30px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.menu-management .create-food form .toggle.on .circle {
+  transform: translateX(0);
+}
+
+.menu-management .create-food form .toggle.off .circle {
+  transform: translateX(90px);
+}
+
+.menu-management .create-food form .toggle .text {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  font-weight: 500;
+}
+
+.menu-management .create-food form .category-select {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.menu-management .create-food form .select-box {
+  height: 42px;
+  border: 1px solid var(--primary-border);
+  border-radius: 10px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  background: var(--background-color);
+  transition: 0.3s;
+}
+
+.menu-management .create-food form .select-box:hover {
+  border-color: #ff7a00;
+}
+
+.menu-management .create-food form .select-box svg {
+  transition: 0.3s;
+}
+
+.menu-management .create-food form .select-box svg.rotate {
+  transform: rotate(180deg);
+}
+
+.menu-management .create-food form .options {
+  position: static;
+  width: 100%;
+  background: var(--background-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  margin-top: 6px;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.menu-management .create-food form .options li {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.menu-management .create-food form .options li:hover {
+  background: #f5f5f5;
+}
+
+.menu-management .create-food form .options li.active {
+  background: #ff7a00;
+  color: #fff;
+}
+.menu-management .create-food form ingredients-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.menu-management .create-food form .input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.menu-management .create-food form .input-row input {
+  flex: 1;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 8px;
+  border: 1px solid var(--primary-border);
+}
+
+.menu-management .create-food form .input-row button {
+  width: 40px;
+  border-radius: 8px;
+  border: none;
+  background: #7f7b78fa;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.menu-management .create-food form .ingredients-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu-management .create-food form .ingredients-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--background-color);
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-top: 6px;
+  color: var(--secondary-text);
+}
+
+.menu-management .create-food form .ingredients-list .actions {
+  display: flex;
+  gap: 6px;
+}
+
+.menu-management .create-food form .ingredients-list button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: var(--secondary-text);
+}
+.menu-management .create-food form .button {
+  display: flex;
+  gap: 10px;
+  margin: 20px;
+  flex-direction: row;
+}
+.menu-management .create-food form .button button {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid #9d9c9c8c;
+  border-radius: 12px;
+  background: white;
+  font-size: 18px;
+  color: #3b3b3b;
+}
+.menu-management .create-food form .button button.orange {
+  background: var(--primary-orange);
+  color: white;
+  border: none;
+}
+.menu-management .popp {
+  width: 63%;
+}
+.menu-management .form .one .left .icon {
+  background: linear-gradient(182deg, #9810fa, #ad46ff);
+  color: white;
+}
+
+.menu-management .form form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 5px;
+}
+.menu-management .form .inputs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.menu-management .form .input {
+  display: flex;
+  flex-direction: column;
+}
+.menu-management .form label {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--primary-text);
+}
+.menu-management .form .input input {
+  padding: 10px;
+  border: 1px solid var(--primary-border);
+  border-radius: 6px;
+  background: var(--third-background);
+  color: var(--primary-text);
+}
+.menu-management .form button {
+  padding: 13px;
+  border-radius: 8px;
+  background: var(--primary-orange-gradient);
+  color: white;
+  border: none;
+  text-align: center;
+}
+.menu-management .form button.cancel {
+  background: white;
+  color: black;
+  border: 1px solid #e9e8e8;
+}
