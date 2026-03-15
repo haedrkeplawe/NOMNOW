@@ -1,6 +1,6 @@
 const Order = require("../models/Order");
 const Driver = require("../models/Driver");
-const Restaurant = require("../models/Restaurant");
+const Restaurant = require("../models/restaurant");
 const { findAndNotifyDrivers } = require("./services/order.service");
 
 module.exports = (io, restaurantNS) => {
