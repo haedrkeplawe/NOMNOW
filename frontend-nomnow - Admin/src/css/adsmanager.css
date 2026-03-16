@@ -1,0 +1,292 @@
+.ads-manager-page .menu-items {
+  color: var(--primary-text);
+}
+.ads-manager-page .menu-items .head {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  border: 1px solid var(--primary-border);
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 15px 15px 0px 0px;
+  border-bottom: 0;
+}
+.ads-manager-page .menu-items .head h3 {
+  font-weight: 500;
+  color: var(--secondary-text);
+}
+.ads-manager-page .menu-items .item {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  border: 1px solid var(--primary-border);
+  padding: 12px;
+  font-size: 14px;
+  background-color: var(--primary-background);
+  align-items: center;
+  border-bottom: 0;
+}
+.ads-manager-page .menu-items .item:last-child {
+  border-radius: 0px 0px 15px 15px;
+  border-bottom: 1px solid var(--primary-border);
+}
+
+.ads-manager-page .menu-items .item h2 {
+  font-size: 18px;
+  font-weight: 500;
+}
+.ads-manager-page .menu-items .item .type {
+  color: #8200db;
+  background: #f3e8ff;
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: 10px;
+}
+.ads-manager-page .menu-items .item .date {
+  display: flex;
+  flex-direction: column;
+  color: var(--secondary-text);
+}
+.ads-manager-page .menu-items .item .Target {
+  color: var(--secondary-text);
+}
+.ads-manager-page .menu-items .item .priority {
+  color: #ca3500;
+  background: #ffedd4;
+  width: fit-content;
+  padding: 3px 9px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.ads-manager-page .menu-items .item .status {
+  color: #008236;
+  background: #dcfce7;
+  width: fit-content;
+  padding: 2px 9px;
+  border-radius: 10px;
+}
+.ads-manager-page .menu-items .item .status.scheduled {
+  color: blue;
+}
+.ads-manager-page .menu-items .item .status.expired {
+  color: #727272;
+}
+.ads-manager-page .menu-items .item .clicks {
+  font-weight: 500;
+}
+.ads-manager-page .menu-items .item .action {
+  display: flex;
+  gap: 10px;
+  cursor: pointer;
+}
+.ads-manager-page .menu-items .item .action .show {
+  color: #155dfc;
+}
+.ads-manager-page .menu-items .item .action .edit {
+  color: #f3672b;
+}
+.ads-manager-page .menu-items .item .action .delete {
+  color: #e7242d;
+}
+.ads-manager-page .popp {
+  width: 90%;
+  max-width: 700px;
+  overflow: scroll;
+  height: 95vh;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.ads-manager-page .popp::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}
+.ads-manager-page .form .one .left .icon {
+  background: linear-gradient(182deg, #9810fa, #ad46ff);
+  color: white;
+}
+.ads-manager-page .form form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 5px;
+}
+.ads-manager-page .form .inputs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.ads-manager-page .form .input {
+  display: flex;
+  flex-direction: column;
+}
+.ads-manager-page .form label {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: var(--primary-text);
+}
+.ads-manager-page .form .input input {
+  padding: 10px;
+  border: 1px solid var(--primary-border);
+  border-radius: 6px;
+  background: var(--third-background);
+  color: var(--primary-text);
+}
+.ads-manager-page .form button {
+  padding: 13px;
+  border-radius: 8px;
+  background: var(--primary-orange-gradient);
+  color: white;
+  border: none;
+  text-align: center;
+}
+.ads-manager-page .form button.cancel {
+  background: white;
+  color: black;
+  border: 1px solid #e9e8e8;
+}
+
+.ads-manager-page .form .image-upload {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 183px;
+  border: 1px solid var(--primary-border);
+  border-radius: 18px;
+  margin-top: 6px;
+  color: var(--secondary-text);
+}
+
+.ads-manager-page .form .image-upload .upload-box .placeholder {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.ads-manager-page .form .image-upload img {
+  height: 170px;
+}
+
+.ads-manager-page .form .range-input {
+  margin-top: 16px;
+}
+
+.ads-manager-page .form .range-input label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.ads-manager-page .form .range-value {
+  font-size: 14px;
+  color: var(--secondary-text);
+}
+
+.ads-manager-page .form .range-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ads-manager-page .form .range-label {
+  font-size: 13px;
+  color: #777;
+  width: 35px;
+  text-align: center;
+}
+
+/* الخط */
+.ads-manager-page .form .range-wrapper input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 10px;
+  background: var(--background-color);
+  outline: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+/* الدائرة (الكرة) */
+.ads-manager-page
+  .form
+  .range-wrapper
+  input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  background: #fff;
+  border: 3px solid #ff6b00;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.ads-manager-page
+  .form
+  .range-wrapper
+  input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+/* Firefox */
+.ads-manager-page .form .range-wrapper input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border: 3px solid #ff6b00;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* types-select */
+.ads-manager-page .form .types-select {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.ads-manager-page .form .select-box {
+  height: 39px;
+  border: 1px solid var(--primary-border);
+  border-radius: 10px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  background: var(--background-color);
+  transition: 0.3s;
+  color: var(--primary-text);
+}
+
+.ads-manager-page .form .select-box svg {
+  transition: 0.3s;
+}
+
+.ads-manager-page .form .select-box svg.rotate {
+  transform: rotate(180deg);
+}
+
+.ads-manager-page .form .options {
+  position: static;
+  width: 100%;
+  background: var(--background-color);
+  border-radius: 10px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  margin-top: 6px;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.ads-manager-page .form .options li {
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  color: var(--secondary-text);
+}
+
+.ads-manager-page .form .options li:hover {
+  background: var(--primary-orange-gradient);
+  color: white;
+}
