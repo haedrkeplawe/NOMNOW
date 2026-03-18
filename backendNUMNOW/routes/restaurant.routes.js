@@ -82,3 +82,8 @@ module.exports = router;
 
 // orders
 router.get("/orders", authMiddleware, restaurantController.getOrders);
+router.delete(
+  "/orders/all",
+  authMiddleware,
+  restaurantController.deleteAllOrders,
+);
