@@ -83,6 +83,15 @@ const Orders = () => {
       />
 
       <div className="orders-container">
+        <button
+          onClick={async () => {
+            if (!window.confirm("Delete all orders?")) return;
+            await api.delete("/restaurant/orders/all");
+            setOrders([]); // حذف كل الأوردرات من الواجهة بعد الحذف من السيرفر
+          }}
+        >
+          Delete All Orders
+        </button>
         <div className="orderstabs">
           {TABS.map((tab) => (
             <button
