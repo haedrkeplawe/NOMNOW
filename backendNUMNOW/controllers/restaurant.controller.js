@@ -926,3 +926,15 @@ exports.getDashboardStats = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+exports.deleteAllOrders = async (req, res) => {
+  try {
+    const result = await Order.deleteMany({
+      restaurantId: req.user.restaurantId,
+    });
+    res
+      .status(200)
+      .json({ message: "All orders deleted", count: result.deletedCount });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
