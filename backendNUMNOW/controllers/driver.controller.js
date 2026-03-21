@@ -6,6 +6,7 @@ const Restaurant = require("../models/restaurant");
 const jwt = require("jsonwebtoken");
 const sendResetEmail = require("../utils/sendResetEmail");
 const crypto = require("crypto");
+const Order = require("../models/Order");
 
 //
 exports.register = async (req, res) => {
@@ -379,3 +380,25 @@ exports.findRestaurants = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// order
+exports.getActiveOrder = async (req, res) => {
+  try {
+    const driverId = req.user?.id;
+
+    const activeOrder = await Order.findOne({
+      driverId,
+      orderStatus: { $in: ["picked_up", "on_the_way", "delivered_by_driver"] },
+    })
+      .populate("userId", "name phone")
+      .populate("restaurantId", "name location address");
+
+    res.status(200).json({
+      hasActiveOrder: !!activeOrder,
+      order: activeOrder || null,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
