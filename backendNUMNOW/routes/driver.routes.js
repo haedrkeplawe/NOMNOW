@@ -39,4 +39,7 @@ router.patch(
 // restaurant
 router.get("/restaurants", auth, driverController.findRestaurants);
 
+// Driver orders
+router.get("/active-order", auth, driverController.getActiveOrder); // new
+
 module.exports = router;
