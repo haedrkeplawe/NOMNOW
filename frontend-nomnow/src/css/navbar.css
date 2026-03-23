@@ -1,0 +1,119 @@
+/* navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0px;
+  right: 0;
+  height: 60px;
+  background: var(--primary-background);
+  color: var(--primary-text);
+  display: flex;
+  z-index: 10;
+}
+.navbar .logo {
+  border-bottom: 1.1px solid var(--primary-border);
+  height: 100%;
+  display: flex;
+  width: 270px;
+  align-items: center;
+  padding: 0 20px 0 12px;
+  justify-content: center;
+  gap: 10px;
+}
+.navbar .logo span {
+  background: var(--primary-orange);
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 12px;
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0px 4px 4px 0px var(--primary-shadow);
+  cursor: pointer;
+  font-size: 22px;
+}
+.navbar .logo .resize {
+  margin-left: 16px;
+  background: white;
+  color: black;
+  border-radius: 0;
+  cursor: pointer;
+  box-shadow: none;
+}
+.navbar .logo h2 {
+  font-size: 20px;
+  font-weight: 100;
+}
+.navbar .menu {
+  width: 100%;
+  border-bottom: 1.1px solid var(--primary-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 0px 18px;
+  align-items: center;
+}
+.navbar .menu .left {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+.navbar .menu .left h2 {
+  font-size: 19px;
+  font-weight: 500;
+  color: #837f7f;
+}
+.navbar .menu .left .condition {
+  position: relative;
+  padding: 0px 9px 4px 9px;
+  border-radius: 14px;
+}
+.navbar .menu .left .condition.green {
+  border: 1px solid #b9f8cf;
+  color: green;
+}
+.navbar .menu .left .condition.red {
+  border: 1px solid #f8c0b9;
+  color: red;
+}
+
+.navbar .menu .left .condition::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+.navbar .menu .left .condition.green::before {
+  background-color: green;
+}
+.navbar .menu .left .condition.red::before {
+  background-color: red;
+}
+.navbar .menu .right {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.navbar .menu .right button {
+  border: none;
+  background: none;
+}
+.navbar .menu .right button svg {
+  font-size: 20px;
+  color: var(--primary-text);
+  position: relative;
+  top: 2px;
+}
+.navbar .menu .right h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--primary-text);
+}
+main.main {
+  padding-top: 60px;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+}
