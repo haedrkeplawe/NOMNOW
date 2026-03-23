@@ -8,7 +8,7 @@ const { auth } = require("../middleware/userauth.middlware");
 router.post("/forgot-password", userController.forgotPassword);
 router.post("/reset-password/:token", userController.resetPassword);
 
-router.post("/register", userController.register);
+router.post("/register", upload.single("image"), userController.register);
 
 router.post("/loginwithphone", userController.loginWithPhone);
 router.post("/verifyphone", userController.verifyPhone);
