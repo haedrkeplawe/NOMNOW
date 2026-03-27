@@ -1,108 +1,117 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
+import { useAuth } from "./AuthContext";
+import { createRestaurantSocket } from "../socket/restaurantSocket";
 
-const AuthContext = createContext();
+const RestaurantContext = createContext();
+export const useRestaurant = () => useContext(RestaurantContext);
 
-export const useAuth = () => useContext(AuthContext);
-
-export const AuthProvider = ({ children }) => {
-  const [accessToken, setAccessToken] = useState(null);
-  const [user, setUser] = useState(null);
+export const RestaurantProvider = ({ children }) => {
+  const { api, accessToken } = useAuth();
+  const [restaurant, setRestaurant] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [newOrders, setNewOrders] = useState([]);
+  const socketRef = useRef(null);
+  const [orders, setOrders] = useState([]);
+  const [socketInstance, setSocketInstance] = useState(null);
+  const [driverAlerts, setDriverAlerts] = useState({});
 
-  // Axios instance
-  const api = axios.create({
-    baseURL: process.env.REACT_APP_API_URL,
-    withCredentials: true,
-  });
-
-  // Attach access token
-  api.interceptors.request.use((config) => {
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-    return config;
-  });
-
-  // Auto refresh on 401
-  api.interceptors.response.use(
-    (response) => response,
-    async (error) => {
-      const originalRequest = error.config;
-
-      if (error.response?.status === 401 && !originalRequest._retry) {
-        originalRequest._retry = true;
-
-        try {
-          const res = await axios.post(
-            `${process.env.REACT_APP_API_URL}/restaurant/refreshtoken`,
-            {},
-            { withCredentials: true }
-          );
-
-          setAccessToken(res.data.accessToken);
-          return api(originalRequest);
-        } catch (err) {
-          logout();
-          return Promise.reject(err);
-        }
-      }
-
-      return Promise.reject(error);
-    }
-  );
-
-  // 🔁 Check auth on app start
   useEffect(() => {
-    const initAuth = async () => {
-      try {
-        const res = await axios.post(
-          `${process.env.REACT_APP_API_URL}/restaurant/refreshtoken`,
-          {},
-          { withCredentials: true }
-        );
+    if (!accessToken) return;
 
-        setAccessToken(res.data.accessToken);
-        setUser(res.data.user); // إذا رجعتها من الباك
+    const fetchRestaurant = async () => {
+      try {
+        const res = await api.get("/restaurant/setting/restorant-info");
+        setRestaurant(res.data.restaurant);
       } catch (err) {
-        setAccessToken(null);
-        setUser(null);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
+    fetchRestaurant();
+  }, [accessToken]);
 
-    initAuth();
-  }, []);
+  useEffect(() => {
+    if (!accessToken) return;
 
-  // Login (بعد OTP)
-  const login = (token, userData) => {
-    setAccessToken(token);
-    setUser(userData);
-  };
+    const socket = createRestaurantSocket(accessToken);
+    socketRef.current = socket;
+    socket.connect();
+    setSocketInstance(socket);
 
-  // Logout
+    socket.on("connected", () => {});
 
-  const navigate = useNavigate();
+    socket.on("order:new", ({ order }) => {
+      setNewOrders((prev) => [order, ...prev]);
+    });
+    socket.on("order:updated", ({ order }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id.toString() === order._id.toString() ? order : o,
+        ),
+      );
+    });
 
-  const logout = async () => {
-    try {
-      await api.post("/auth/logout");
-    } catch (err) {
-      console.error(err);
-    }
+    // ✅ إشعارات السائق
+    socket.on("order:searchingDriver", (data) => {
+      setDriverAlerts((prev) => ({
+        ...prev,
+        [data.orderId.toString()]: "searching",
+      }));
+    });
+    socket.on("order:noDriverFound", (data) => {
+      setDriverAlerts((prev) => ({
+        ...prev,
+        [data.orderId.toString()]: "noDriver",
+      }));
+    });
+    socket.on("order:driverAssigned", ({ orderId, order }) => {
+      // ✅ استبدل الأوردر كامل بدل ما تحدث driverId بس
+      setOrders((prev) =>
+        prev.map((o) => (o._id.toString() === orderId.toString() ? order : o)),
+      );
+      setDriverAlerts((prev) => {
+        const updated = { ...prev };
+        delete updated[orderId.toString()];
+        return updated;
+      });
+    });
 
-    setAccessToken(null);
-    setUser(null);
-    navigate("/login", { replace: true }); // بدل window.location.href
+    return () => {
+      socket.off("order:new");
+      socket.off("order:updated");
+      socket.off("order:searchingDriver");
+      socket.off("order:noDriverFound");
+      socket.off("order:driverAssigned");
+      socket.disconnect();
+    };
+  }, [accessToken]);
+
+  const toggleStatus = async () => {
+    const res = await api.patch("/restaurant/toggle-status");
+    setRestaurant((prev) => ({ ...prev, status: res.data.status }));
   };
 
   return (
-    <AuthContext.Provider
-      value={{ user, accessToken, login, logout, api, loading }}
+    <RestaurantContext.Provider
+      value={{
+        restaurant,
+        loading,
+        toggleStatus,
+        newOrders,
+        setNewOrders,
+        orders,
+        setOrders,
+        socket: socketInstance,
+        driverAlerts,
+        setDriverAlerts,
+        currency: restaurant?.currency === "EUR" ? "EUR" : "SYP",
+        currencyCode: restaurant?.currency || "SYP",
+        taxRate: restaurant?.taxRate || 0,
+        country: restaurant?.country || "SY",
+      }}
     >
-      {!loading && children}
-    </AuthContext.Provider>
+      {children}
+    </RestaurantContext.Provider>
   );
 };
