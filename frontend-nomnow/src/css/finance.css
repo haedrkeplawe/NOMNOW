@@ -1,0 +1,197 @@
+/* ── Layout ──────────────────────────────────────────────── */
+.fin-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.fin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.fin-header__left h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--primary-text);
+}
+.fin-header__left p {
+  font-size: 13px;
+  color: var(--secondary-text);
+  margin-top: 3px;
+}
+.fin-header__badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #eff6ff;
+  color: #1447e6;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+/* ── Loading / Error ─────────────────────────────────────── */
+.fin-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 12px;
+  color: var(--secondary-text);
+  font-size: 14px;
+}
+.fin-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--primary-border);
+  border-top-color: var(--primary-orange);
+  border-radius: 50%;
+  animation: finSpin 0.75s linear infinite;
+}
+@keyframes finSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.fin-error {
+  color: #e7000b;
+  font-size: 15px;
+}
+
+/* ── Cards Grid ──────────────────────────────────────────── */
+.fin-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1100px) {
+  .fin-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .fin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Single Card ─────────────────────────────────────────── */
+.fin-card {
+  background: var(--primary-background);
+  border-radius: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--secondary-border);
+  box-shadow: 0 1px 3px var(--primary-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: box-shadow 0.15s;
+}
+.fin-card:hover {
+  box-shadow: 0 4px 14px var(--primary-shadow);
+}
+
+.fin-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.fin-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.fin-card__badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 20px;
+}
+.fin-card__badge.green {
+  background: #f0fdf4;
+  color: #00a63e;
+}
+.fin-card__badge.blue {
+  background: #eff6ff;
+  color: #1447e6;
+}
+.fin-card__badge.orange {
+  background: #fff7ed;
+  color: #ea6f00;
+}
+.fin-card__badge.red {
+  background: #fef2f2;
+  color: #e7000b;
+}
+.fin-card__badge.purple {
+  background: #fdf4ff;
+  color: #a21caf;
+}
+.fin-card__badge.yellow {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.fin-card__label {
+  font-size: 13px;
+  color: var(--secondary-text);
+  font-weight: 400;
+}
+.fin-card__value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--primary-text);
+  letter-spacing: -0.5px;
+}
+.fin-card__sub {
+  font-size: 12px;
+  color: var(--secondary-text);
+  margin-top: -4px;
+}
+
+/* ── Info Section ────────────────────────────────────────── */
+.fin-info {
+  background: var(--primary-background);
+  border-radius: 16px;
+  padding: 20px 22px;
+  border: 1px solid var(--secondary-border);
+  box-shadow: 0 1px 3px var(--primary-shadow);
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.fin-info__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1447e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+.fin-info__text h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text);
+  margin-bottom: 4px;
+}
+.fin-info__text p {
+  font-size: 13px;
+  color: var(--secondary-text);
+  line-height: 1.6;
+}
