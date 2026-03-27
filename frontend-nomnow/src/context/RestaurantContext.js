@@ -16,6 +16,8 @@ export const RestaurantProvider = ({ children }) => {
   const [driverAlerts, setDriverAlerts] = useState({});
 
   useEffect(() => {
+    if (!accessToken) return;
+
     const fetchRestaurant = async () => {
       try {
         const res = await api.get("/restaurant/setting/restorant-info");
@@ -27,7 +29,7 @@ export const RestaurantProvider = ({ children }) => {
       }
     };
     fetchRestaurant();
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!accessToken) return;
