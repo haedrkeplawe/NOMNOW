@@ -1,0 +1,151 @@
+.login-page {
+  background: var(--background-color);
+  height: 100vh;
+  overflow: hidden;
+}
+.login-page .container {
+  max-width: 428px;
+  margin: 30px auto;
+  text-align: center;
+}
+.login-page .top span {
+  background: var(--primary-orange);
+  width: fit-content;
+  padding: 9px 16px;
+  border-radius: 15px;
+  display: block;
+  margin: 10px auto;
+  font-size: 25px;
+  font-weight: 600;
+  color: white;
+}
+
+.login-page .top h2 {
+  color: var(--primary-text);
+}
+.login-page .top p {
+  color: var(--secondary-text);
+  margin-bottom: 20px;
+}
+.login-page .box {
+  background: var(--primary-background);
+  border-radius: 15px;
+  padding: 20px 45px 64px 45px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: 0px 8px 9px 0px var(--primary-shadow);
+}
+.login-page .box h3 {
+  font-size: 25px;
+  font-weight: 400;
+  color: var(--primary-text);
+}
+.login-page .box h3.sendemail {
+  background: #dcfce7;
+  margin: 0 auto;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #00a63e;
+}
+.login-page .box button {
+  background: black;
+  color: white;
+  border-radius: 14px;
+  border: none;
+  padding: 13px;
+  font-size: 15px;
+  width: 90%;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+}
+.login-page .box button.orange {
+  background-color: var(--primary-orange);
+}
+.login-page .box button.orange:disabled {
+  opacity: 0.7;
+}
+.login-page .box p {
+  color: var(--secondary-text);
+  font-size: 15px;
+}
+.login-page .box p span {
+  color: var(--primary-orange);
+  cursor: pointer;
+  text-align: center;
+}
+
+.login-page form {
+  text-align: start;
+}
+.login-page form h3 {
+  font-size: 22px !important;
+}
+.login-page form input {
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--primary-border);
+  background: var(--background-color);
+  color: var(--primary-text);
+}
+
+.login-page form .otp-container {
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+}
+
+.login-page form .otp-input {
+  width: 33px;
+  height: 37px;
+  font-size: 16px;
+  text-align: center;
+  border: 1.5px solid var(--primary-border);
+  border-radius: 0;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.login-page form .otp-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.login-page form button {
+  width: 100% !important;
+}
+.login-page .error {
+  color: red;
+  font-size: 14px;
+  text-align: center;
+}
+.login-page .phone {
+  text-align: center;
+}
+.login-page .phone .icon {
+  text-align: start;
+}
+.login-page .phone > span {
+  background: var(--primary-orange);
+  width: 55px;
+  border-radius: 50%;
+  display: block;
+  margin: 0px auto;
+  font-size: 25px;
+  font-weight: 600;
+  color: white;
+  height: 55px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.login-page .phone .resend {
+  color: var(--primary-orange);
+}
