@@ -1,0 +1,660 @@
+/* === ADMIN — Orders Management === */
+
+/* ── Layout ──────────────────────────────────────────────── */
+.aord-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  color: var(--primary-text);
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.aord-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.aord-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--primary-text);
+}
+.aord-header p {
+  font-size: 13px;
+  color: var(--secondary-text);
+  margin-top: 3px;
+}
+.aord-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--secondary-border);
+  background: var(--primary-background);
+  color: var(--secondary-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.aord-refresh:hover {
+  background: var(--primary-hover);
+  color: var(--primary-text);
+}
+
+/* ── Summary Cards ───────────────────────────────────────── */
+.aord-summary {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) {
+  .aord-summary {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 700px) {
+  .aord-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.aord-sum-card {
+  background: var(--primary-background);
+  border-radius: 14px;
+  padding: 16px 18px;
+  border: 1px solid var(--secondary-border);
+  box-shadow: 0 1px 3px var(--primary-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.aord-sum-card:hover {
+  box-shadow: 0 4px 14px var(--primary-shadow);
+}
+.aord-sum-card.active {
+  border-color: var(--primary-orange);
+  box-shadow: 0 0 0 2px rgba(245, 73, 0, 0.12);
+}
+.aord-sum-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.aord-sum-card__label {
+  font-size: 12px;
+  color: var(--secondary-text);
+  margin: 0;
+}
+.aord-sum-card__value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--primary-text);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+/* ── Toolbar ─────────────────────────────────────────────── */
+.aord-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--primary-background);
+  border: 1px solid var(--secondary-border);
+  border-radius: 14px;
+  padding: 12px 16px;
+}
+
+/* Search */
+.aord-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--background-color);
+  border: 1px solid var(--secondary-border);
+  border-radius: 9px;
+  padding: 8px 12px;
+  width: 260px;
+  color: var(--secondary-text);
+}
+.aord-search input {
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--primary-text);
+  width: 100%;
+  outline: none;
+}
+.aord-search button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary-text);
+  display: flex;
+  align-items: center;
+}
+
+/* Tabs */
+.aord-tabs {
+  display: flex;
+  gap: 4px;
+}
+.aord-tabs button {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--secondary-text);
+  cursor: pointer;
+  transition: 0.15s;
+  white-space: nowrap;
+}
+.aord-tabs button.active {
+  background: var(--primary-orange-gradient);
+  color: white;
+}
+.aord-tabs button:hover:not(.active) {
+  background: var(--primary-hover);
+  color: var(--primary-text);
+}
+
+/* ── Table ───────────────────────────────────────────────── */
+.aord-table-wrap {
+  background: var(--primary-background);
+  border-radius: 14px;
+  border: 1px solid var(--secondary-border);
+  box-shadow: 0 1px 3px var(--primary-shadow);
+}
+.aord-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  gap: 12px;
+  color: var(--secondary-text);
+  font-size: 14px;
+}
+.aord-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--primary-border);
+  border-top-color: var(--primary-orange);
+  border-radius: 50%;
+  animation: aordSpin 0.75s linear infinite;
+}
+@keyframes aordSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.aord-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.aord-table thead th {
+  text-align: left;
+  padding: 12px 16px;
+  color: var(--secondary-text);
+  font-weight: 500;
+  font-size: 12px;
+  border-bottom: 1px solid var(--secondary-border);
+  background: var(--third-background, #f9fafb);
+  white-space: nowrap;
+}
+.aord-table thead th:first-child {
+  border-radius: 14px 0 0 0;
+}
+.aord-table thead th:last-child {
+  border-radius: 0 14px 0 0;
+}
+.aord-table tbody tr {
+  border-bottom: 1px solid var(--secondary-border);
+  transition: background 0.12s;
+}
+.aord-table tbody tr:last-child {
+  border-bottom: none;
+}
+.aord-table tbody tr:hover {
+  background: var(--primary-hover);
+}
+.aord-table td {
+  padding: 13px 16px;
+  vertical-align: middle;
+}
+
+.aord-table__id {
+  font-weight: 700;
+  color: var(--primary-orange);
+  white-space: nowrap;
+}
+.aord-table__time {
+  color: var(--secondary-text);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.aord-table__total {
+  font-weight: 600;
+  color: var(--primary-text);
+  white-space: nowrap;
+}
+
+/* Person cell */
+.aord-person-cell {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.aord-person-cell__av {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--primary-orange-gradient);
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.aord-person-cell__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-text);
+}
+.aord-person-cell__sub {
+  font-size: 11px;
+  color: var(--secondary-text);
+}
+
+/* Restaurant cell */
+.aord-restaurant-cell {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--primary-text);
+}
+
+/* Driver */
+.aord-driver-name {
+  font-size: 13px;
+  color: var(--primary-text);
+}
+.aord-na {
+  font-size: 12px;
+  color: var(--secondary-text);
+}
+
+/* Status badge */
+.aord-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* View button */
+.aord-view-btn {
+  padding: 5px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--secondary-border);
+  background: var(--primary-background);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.aord-view-btn:hover {
+  background: var(--primary-orange);
+  color: white;
+  border-color: var(--primary-orange);
+}
+
+/* ── Pagination ──────────────────────────────────────────── */
+.aord-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  font-size: 13px;
+  color: var(--secondary-text);
+}
+.aord-pagination button {
+  padding: 7px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--secondary-border);
+  background: var(--primary-background);
+  color: var(--primary-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.aord-pagination button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.aord-pagination button:not(:disabled):hover {
+  background: var(--primary-orange);
+  color: white;
+  border-color: var(--primary-orange);
+}
+
+/* ── Modal Overlay ───────────────────────────────────────── */
+.aord-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.aord-modal {
+  background: var(--primary-background);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  scrollbar-width: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  animation: aordModalIn 0.2s ease;
+}
+.aord-modal::-webkit-scrollbar {
+  display: none;
+}
+@keyframes aordModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Modal header */
+.aord-modal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--secondary-border);
+  position: sticky;
+  top: 0;
+  background: var(--primary-background);
+  z-index: 1;
+  border-radius: 18px 18px 0 0;
+}
+.aord-modal__header h3 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary-text);
+}
+.aord-modal__header p {
+  font-size: 12px;
+  color: var(--secondary-text);
+  margin-top: 2px;
+}
+.aord-modal__header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.aord-modal__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--secondary-text);
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  transition: color 0.15s;
+}
+.aord-modal__close:hover {
+  color: #e7000b;
+}
+
+/* Modal body */
+.aord-modal__body {
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Three-party grid */
+.aord-modal__parties {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.aord-party {
+  background: var(--background-color);
+  border: 1px solid var(--secondary-border);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.aord-party__head {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--secondary-text);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+.aord-party__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-orange-gradient);
+  color: white;
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-bottom: 4px;
+}
+.aord-party__avatar--orange {
+  background: linear-gradient(135deg, #f54900, #ff6b4a);
+}
+.aord-party__avatar--blue {
+  background: linear-gradient(135deg, #1447e6, #3b82f6);
+  border-radius: 10px;
+}
+
+.aord-party__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-text);
+}
+.aord-party__sub {
+  font-size: 12px;
+  color: var(--secondary-text);
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.aord-party__sub--na {
+  font-style: italic;
+}
+.aord-party__addr {
+  font-size: 11px;
+  color: var(--secondary-text);
+  display: flex;
+  align-items: flex-start;
+  gap: 3px;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* Items */
+.aord-modal__items {
+  background: var(--background-color);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.aord-modal__items h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary-text);
+  margin-bottom: 4px;
+}
+.aord-item-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.aord-item-row__left {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1;
+}
+.aord-item-row__img {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.aord-item-row__qty {
+  font-weight: 700;
+  color: var(--primary-orange);
+  margin-right: 3px;
+}
+.aord-item-row__name {
+  font-size: 13px;
+  color: var(--primary-text);
+}
+.aord-item-row__size {
+  font-size: 11px;
+  background: #eff6ff;
+  color: #1447e6;
+  padding: 1px 7px;
+  border-radius: 20px;
+  margin-left: 5px;
+}
+.aord-item-row__extras {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.aord-extra-tag {
+  font-size: 11px;
+  background: #faf5ff;
+  color: #7e22ce;
+  border: 1px solid #e9d5ff;
+  padding: 1px 7px;
+  border-radius: 20px;
+}
+.aord-item-row__price {
+  font-size: 13px;
+  color: var(--secondary-text);
+  white-space: nowrap;
+}
+
+/* Totals */
+.aord-totals {
+  border-top: 1px dashed var(--primary-border);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.aord-totals__row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--secondary-text);
+}
+.aord-totals__row--total {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--primary-orange);
+  border-top: 1px solid var(--secondary-border);
+  padding-top: 8px;
+  margin-top: 2px;
+}
+
+/* Notes */
+.aord-modal__notes {
+  background: #fff3ef;
+  border: 1px solid #fcd9c8;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #c2440f;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+/* Payment */
+.aord-modal__payment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 4px;
+}
+.aord-pay-method {
+  font-size: 12px;
+  text-transform: capitalize;
+  background: var(--background-color);
+  border: 1px solid var(--secondary-border);
+  color: var(--secondary-text);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+.aord-pay-badge {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.aord-pay-badge.aord-pay--green {
+  background: #f0fdf4;
+  color: #00a63e;
+}
+.aord-pay-badge.aord-pay--yellow {
+  background: #fffbeb;
+  color: #b45309;
+}
+.aord-pay-badge.aord-pay--red {
+  background: #fef2f2;
+  color: #e7000b;
+}
