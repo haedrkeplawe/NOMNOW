@@ -1,0 +1,346 @@
+/* home.css */
+
+/* ── Layout ──────────────────────────────────────────────── */
+.hm-page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.hm-center {
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  gap: 12px;
+  color: var(--secondary-text);
+  font-size: 14px;
+}
+.hm-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--primary-border);
+  border-top-color: var(--primary-orange);
+  border-radius: 50%;
+  animation: hmSpin 0.75s linear infinite;
+}
+@keyframes hmSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.hm-error {
+  color: #e7000b;
+  font-size: 15px;
+}
+
+/* ── Stats Grid ─────────────────────────────────────────── */
+.hm-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1050px) {
+  .hm-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .hm-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hm-stat {
+  background: var(--primary-background);
+  border-radius: 14px;
+  padding: 18px 20px;
+  border: 1px solid var(--secondary-border);
+  box-shadow: 0 1px 3px var(--primary-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.15s;
+}
+.hm-stat:hover {
+  box-shadow: 0 4px 14px var(--primary-shadow);
+}
+
+.hm-stat__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.hm-stat__icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.hm-stat__change {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.hm-stat__change.pos {
+  color: #00a63e;
+}
+.hm-stat__change.neg {
+  color: #e7000b;
+}
+.hm-stat__label {
+  font-size: 13px;
+  color: var(--secondary-text);
+  margin: 0;
+}
+.hm-stat__value {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--primary-text);
+  margin: 0;
+}
+
+/* ── Row (two columns) ──────────────────────────────────── */
+.hm-row {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 16px;
+}
+@media (max-width: 1000px) {
+  .hm-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Card ───────────────────────────────────────────────── */
+.hm-card {
+  background: var(--primary-background);
+  border-radius: 14px;
+  padding: 20px 22px;
+  border: 1px solid var(--secondary-border);
+  box-shadow: 0 1px 3px var(--primary-shadow);
+}
+.hm-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.hm-card-head__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #fff3ef;
+  color: var(--primary-orange);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+[data-theme="dark"] .hm-card-head__icon {
+  background: #3a1a0f;
+}
+
+/* flex so icon and text go side-by-side in Top Selling header */
+.hm-card .hm-card-head:has(.hm-card-head__icon) {
+  align-items: center;
+}
+
+.hm-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary-text);
+  margin: 0;
+}
+.hm-card-sub {
+  font-size: 12px;
+  color: var(--secondary-text);
+  margin: 2px 0 0;
+}
+.hm-view-all {
+  font-size: 13px;
+  color: var(--primary-orange);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.hm-view-all:hover {
+  text-decoration: underline;
+}
+
+/* ── Pie Legend ─────────────────────────────────────────── */
+.hm-pie-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 4px;
+}
+.hm-pie-legend__row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.hm-pie-legend__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.hm-pie-legend__txt {
+  font-size: 13px;
+  color: var(--secondary-text);
+}
+
+/* ── Table ──────────────────────────────────────────────── */
+.hm-tbl-wrap {
+  overflow-x: auto;
+}
+.hm-tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.hm-tbl thead th {
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--secondary-text);
+  font-weight: 500;
+  font-size: 12px;
+  border-bottom: 1px solid var(--secondary-border);
+  white-space: nowrap;
+}
+.hm-tbl tbody tr {
+  border-bottom: 1px solid var(--secondary-border);
+  transition: background 0.12s;
+}
+.hm-tbl tbody tr:last-child {
+  border-bottom: none;
+}
+.hm-tbl tbody tr:hover {
+  background: var(--primary-hover);
+}
+.hm-tbl td {
+  padding: 11px 12px;
+  color: var(--primary-text);
+  white-space: nowrap;
+}
+.hm-tbl__id {
+  font-weight: 600;
+  color: var(--primary-text);
+}
+.hm-tbl__time {
+  color: var(--secondary-text);
+}
+.hm-tbl__na {
+  color: var(--secondary-text);
+}
+.hm-tbl__empty {
+  text-align: center;
+  color: var(--secondary-text);
+  padding: 30px 0 !important;
+}
+
+/* ── Badge ──────────────────────────────────────────────── */
+.hm-badge {
+  display: inline-block;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Top Selling List ───────────────────────────────────── */
+.hm-top-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hm-top-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: var(--background-color);
+  border: 1px solid var(--secondary-border);
+}
+.hm-top-rank {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+  background: #9ca3af;
+}
+.hm-top-rank.r1 {
+  background: #f54900;
+}
+.hm-top-rank.r2 {
+  background: #ff6b4a;
+}
+.hm-top-rank.r3 {
+  background: #ff8c6e;
+}
+
+.hm-top-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+.hm-top-img--ph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-border);
+  font-size: 16px;
+}
+.hm-top-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--primary-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hm-top-qty {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--secondary-text);
+  white-space: nowrap;
+}
+.hm-empty {
+  text-align: center;
+  color: var(--secondary-text);
+  font-size: 14px;
+  padding: 24px 0;
+}
+
+/* ── Tooltip ────────────────────────────────────────────── */
+.hm-tip {
+  background: var(--primary-background);
+  border: 1px solid var(--primary-border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--primary-text);
+  box-shadow: 0 4px 12px var(--primary-shadow);
+}
+.hm-tip__lbl {
+  font-weight: 600;
+  color: var(--secondary-text);
+  margin-bottom: 3px;
+}
