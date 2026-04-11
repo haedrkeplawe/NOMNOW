@@ -1,0 +1,118 @@
+/* navbar */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0px;
+  right: 0;
+  height: 60px;
+  background: var(--primary-background);
+  color: var(--primary-text);
+  display: flex;
+  z-index: 10;
+}
+.navbar .logo {
+  border-bottom: 1.1px solid var(--primary-border);
+  height: 100%;
+  display: flex;
+  width: 270px;
+  align-items: center;
+  padding: 0 20px 0 12px;
+  justify-content: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.navbar .logo span {
+  background: var(--primary-orange);
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 12px;
+  display: block;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0px 4px 4px 0px var(--primary-shadow);
+  cursor: pointer;
+  font-size: 22px;
+}
+.navbar .logo h2 {
+  font-size: 20px;
+  font-weight: 100;
+}
+.navbar .menu {
+  width: 100%;
+  border-bottom: 1.1px solid var(--primary-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 0px 18px;
+  align-items: center;
+}
+.navbar .menu .left {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+.navbar .menu .right {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+.navbar .menu .right button {
+  border: none;
+  background: none;
+}
+.navbar .menu .right button svg {
+  font-size: 20px;
+  color: var(--primary-text);
+  position: relative;
+  top: 2px;
+}
+.navbar .menu .right h4 {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--primary-text);
+}
+
+/* ── Country Selector ────────────────────────────────────── */
+.country-selector {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--background-color);
+  border: 1px solid var(--secondary-border);
+  border-radius: 10px;
+  padding: 4px;
+}
+.country-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 13px;
+  border: none;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: var(--secondary-text);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+.country-btn:hover:not(.active) {
+  background: var(--primary-hover);
+  color: var(--primary-text);
+}
+.country-btn.active {
+  background: var(--primary-orange-gradient);
+  color: white;
+  box-shadow: 0 2px 6px rgba(245, 73, 0, 0.25);
+}
+.country-btn span:first-child {
+  font-size: 15px;
+}
+
+/* ── Layout ──────────────────────────────────────────────── */
+main.main {
+  padding-top: 60px;
+  height: 100%;
+  display: flex;
+  overflow: hidden;
+}
