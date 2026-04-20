@@ -1,4 +1,5 @@
-// Restaurant & foodconst User = require("../models/User");
+// Restaurant & foodconst
+User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const uploadBuffer = require("../utils/cloudUpload");
