@@ -494,3 +494,127 @@
   background: #fef2f2;
   color: #e7000b;
 }
+
+/* ── Delete Orders Head (title + delete btn) ──────────────────────── */
+.orders-page .orders-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Delete All Button ──────────────────────────────────────── */
+.orders-page .ord-delete-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #fef2f2;
+  color: #e7000b;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s, border-color 0.2s;
+  margin-top: 6px;
+}
+.orders-page .ord-delete-all-btn:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+/* ── Confirmation Overlay ───────────────────────────────────── */
+.ord-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+
+/* ── Confirmation Box ───────────────────────────────────────── */
+.ord-confirm-box {
+  background: var(--primary-background);
+  border-radius: 20px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  text-align: center;
+}
+.ord-confirm-icon {
+  width: 56px;
+  height: 56px;
+  background: #fef2f2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e7000b;
+  margin-bottom: 4px;
+}
+.ord-confirm-box h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--primary-text);
+  margin: 0;
+}
+.ord-confirm-box p {
+  font-size: 13px;
+  color: var(--secondary-text);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Confirmation Actions ───────────────────────────────────── */
+.ord-confirm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  margin-top: 8px;
+}
+.ord-confirm-cancel {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid var(--primary-border);
+  background: var(--background-color);
+  color: var(--primary-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ord-confirm-cancel:hover {
+  background: var(--secondary-border);
+}
+.ord-confirm-delete {
+  flex: 1;
+  padding: 10px;
+  border-radius: 12px;
+  border: none;
+  background: #e7000b;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.ord-confirm-delete:hover {
+  opacity: 0.87;
+}
+.ord-confirm-delete:disabled,
+.ord-confirm-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
