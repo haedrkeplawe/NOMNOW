@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import HeadCreateAndDetails from "../components/HeadCreateAndDetails";
 import OrderCard from "../components/OrderCard";
 import { useTranslation } from "react-i18next";
+import { FiTrash2, FiAlertTriangle } from "react-icons/fi";
+import { toast } from "react-hot-toast";
 
 const TAB_KEYS = [
   "all",
@@ -17,6 +19,38 @@ const TAB_KEYS = [
   "cancelled",
 ];
 
+// Delete ── Confirmation Dialog ───────────────────────────────────────
+const DeleteConfirmDialog = ({ onConfirm, onCancel, loading }) => (
+  <div className="ord-confirm-overlay">
+    <div className="ord-confirm-box">
+      <div className="ord-confirm-icon">
+        <FiAlertTriangle size={28} />
+      </div>
+      <h3>{"Delete All Orders"}</h3>
+      <p>
+        This will permanently delete all orders for your restaurant. This action
+        cannot be undone.
+      </p>
+      <div className="ord-confirm-actions">
+        <button
+          className="ord-confirm-cancel"
+          onClick={onCancel}
+          disabled={loading}
+        >
+          Cancel
+        </button>
+        <button
+          className="ord-confirm-delete"
+          onClick={onConfirm}
+          disabled={loading}
+        >
+          {loading ? "Deleting..." : "Yes, Delete All"}
+        </button>
+      </div>
+    </div>
+  </div>
+);
+
 const Orders = () => {
   const { api } = useAuth();
   const { t } = useTranslation();
@@ -25,6 +59,10 @@ const Orders = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+
+  // Delete
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearch(search), 300);
@@ -48,6 +86,22 @@ const Orders = () => {
     fetchOrders();
   }, []);
 
+  // Delete
+  const handleDeleteAll = async () => {
+    setDeleteLoading(true);
+    try {
+      await api.delete("/restaurant/orders/all");
+      setOrders([]);
+      setNewOrders([]);
+      setShowConfirm(false);
+      toast.success("All orders deleted successfully");
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to delete orders");
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
   const filteredOrders = orders
     .filter((o) => activeTab === "all" || o.orderStatus === activeTab)
     .filter((o) => {
@@ -61,10 +115,29 @@ const Orders = () => {
 
   return (
     <div className="orders-page">
+      {/* ── Confirmation Dialog ── */}
+      {showConfirm && (
+        <DeleteConfirmDialog
+          onConfirm={handleDeleteAll}
+          onCancel={() => setShowConfirm(false)}
+          loading={deleteLoading}
+        />
+      )}
+
       <HeadCreateAndDetails
         text1={t("orders.title")}
         text2={t("orders.subtitle")}
       />
+      {/* Delete */}
+      {orders.length > 0 && (
+        <button
+          className="ord-delete-all-btn"
+          onClick={() => setShowConfirm(true)}
+        >
+          <FiTrash2 size={15} />
+          {t("orders.deleteAll") || "Delete All"}
+        </button>
+      )}
 
       <div className="orders-container">
         {/* Tabs */}
@@ -105,7 +178,10 @@ const Orders = () => {
         {/* List */}
         <div className="orders-list">
           {ordersLoading ? (
-            <p className="empty">{t("orders.loading")}</p>
+            <div className="page-loader">
+              <div className="page-loader__spinner" />
+              <p>{t("orders.loading")}</p>
+            </div>
           ) : filteredOrders.length === 0 ? (
             <p className="empty">{t("orders.noOrders")}</p>
           ) : (
