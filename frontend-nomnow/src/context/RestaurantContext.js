@@ -79,6 +79,9 @@ export const RestaurantProvider = ({ children }) => {
 
     const socket = createRestaurantSocket(accessToken);
     socketRef.current = socket;
+
+    socket.removeAllListeners();
+
     socket.connect();
     setSocketInstance(socket);
 
