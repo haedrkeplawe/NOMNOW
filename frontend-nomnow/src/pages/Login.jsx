@@ -331,7 +331,7 @@ export default function Login() {
               <button className="orange" disabled={loading}>
                 {t("auth.verify")}
               </button>
-              <h2>{test}</h2>
+              <h2>{testtt}</h2>
               {error && <div className="error">{error}</div>}
               {resendButtonJSX}
             </form>
