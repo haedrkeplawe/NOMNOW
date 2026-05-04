@@ -331,6 +331,7 @@ export default function Login() {
               <button className="orange" disabled={loading}>
                 {t("auth.verify")}
               </button>
+              <h2>{test}</h2>
               {error && <div className="error">{error}</div>}
               {resendButtonJSX}
             </form>
@@ -387,7 +388,7 @@ export default function Login() {
               <p>{t("auth.linkSentDesc")}</p>
               <div className="error">{email}</div>
               <p>{t("auth.checkInbox")}</p>
-              <h2>{test}</h2>
+
               <button className="orange" onClick={() => setType("email")}>
                 {t("auth.backToSignIn")}
               </button>
