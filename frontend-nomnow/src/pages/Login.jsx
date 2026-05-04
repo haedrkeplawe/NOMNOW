@@ -16,6 +16,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("none");
   const [phone, setPhone] = useState("");
+  const [testtt, setTesttt] = useState("");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState(Array(6).fill(""));
   const [password, setPassword] = useState("");
@@ -87,6 +88,7 @@ export default function Login() {
         { phone, password },
         { withCredentials: true },
       );
+      setTesttt(res.data.message);
       console.log(res.data.message);
       setType("verificationphone");
       setError("");
@@ -385,6 +387,7 @@ export default function Login() {
               <p>{t("auth.linkSentDesc")}</p>
               <div className="error">{email}</div>
               <p>{t("auth.checkInbox")}</p>
+              <h2>{test}</h2>
               <button className="orange" onClick={() => setType("email")}>
                 {t("auth.backToSignIn")}
               </button>
