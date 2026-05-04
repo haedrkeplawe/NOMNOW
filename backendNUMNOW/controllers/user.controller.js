@@ -287,7 +287,7 @@ exports.loginWithEmail = async (req, res) => {
       user.emailOtpExpire = Date.now() + 60 * 60 * 1000;
       await user.save();
 
-      await emailProvider.send(user.email, `Your OTP: ${otp}`);
+      emailProvider.send(user.email, `Your OTP: ${otp}`).catch(console.error);
 
       res.status(200).json({
         message: m.auth.otpSentEmail,
