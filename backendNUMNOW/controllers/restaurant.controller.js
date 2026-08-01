@@ -1841,6 +1841,7 @@ exports.getSalesReports = async (req, res) => {
   }
 };
 exports.deleteAllOrders = async (req, res) => {
+    await Driver.updateMany({}, { $set: { availability: "online" } });
   try {
     const m = getMessages(req);
     const result = await Order.deleteMany({
