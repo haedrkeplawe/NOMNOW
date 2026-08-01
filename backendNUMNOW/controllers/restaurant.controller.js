@@ -1,6 +1,7 @@
 const Restaurant = require("../models/restaurant");
 const RestaurantUser = require("../models/restaurantUser");
 const Food = require("../models/food");
+const Driver = require("../models/Driver");
 const Category = require("../models/category");
 const bcrypt = require("bcryptjs");
 const smsProvider = require("../utils/smsProvider");
