@@ -1293,7 +1293,7 @@ exports.getDashboardStats = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-const SETTLEMENT_DAYS = 2;
+const SETTLEMENT_DAYS = 1;
 
 const syncSettlementStatuses = async (restaurantId) => {
   const cutoff = new Date();
