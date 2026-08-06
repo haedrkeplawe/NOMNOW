@@ -14,6 +14,7 @@ const Cart = require("../models/Cart");
 const Order = require("../models/Order");
 const { getMessages } = require("../utils/messages");
 const Promotion = require("../models/Promotion");
+const Category = require("../models/category");
 
 const Stripe = require("stripe");
 const { HttpsProxyAgent } = require("https-proxy-agent");
@@ -961,7 +962,21 @@ exports.getAllFood = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-// update v2.2
+// v3.1
+exports.getRestaurantCategories = async (req, res) => {
+  try {
+    const restaurantId = req.params.id;
+
+    const categories = await Category.find({
+      restaurantId,
+    }).sort({ createdAt: 1 });
+
+    res.status(200).json({ success: true, categories });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
 exports.getFood = async (req, res) => {
   try {
     const foodId = req.params.id;
@@ -984,8 +999,6 @@ exports.getFood = async (req, res) => {
     console.log(err);
   }
 };
-// update1.1 اضفنا  featuredFoods
-// update v2.2
 exports.getAllFoodInRestaurant = async (req, res) => {
   try {
     const { sort, category } = req.query;
