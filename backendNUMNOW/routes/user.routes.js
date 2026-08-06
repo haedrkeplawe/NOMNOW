@@ -41,6 +41,8 @@ router.get("/search", auth, userController.search); // new1.1
 // GET /api/user/restaurant?sort=rating  → تقييم + قرب
 // GET /api/user/restaurant?sort=popular → طلبات + قرب
 router.get("/restaurant", auth, userController.getAllRestaurant);
+// v3.1 جلب الاصناف الداخليه للمطعم
+router.get("/categories/:id", auth, userController.getRestaurantCategories);
 // update1.1
 // GET /api/user/food?sort=popular  → الأكل مرتب حسب الأكثر طلباً
 // GET /api/user/food?sort=rating   → الأكل مرتب حسب التقييم
