@@ -26,6 +26,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 });
 
 // utils
+// التحقق من توفر عرض التوصيل المجاني
 const calculateDeliveryFee = async (cart, restaurant, session = null) => {
   let deliveryFee = restaurant.country === "DE" ? 3 : 1000;
   const originalDeliveryFee = deliveryFee;
@@ -48,6 +49,46 @@ const calculateDeliveryFee = async (cart, restaurant, session = null) => {
   return { deliveryFee, originalDeliveryFee };
 };
 
+// التحقق من توفر عرض الحسم على الوجبه
+const syncCartItemPromotions = async (cart, session = null) => {
+  let changed = false;
+  const now = new Date();
+
+  for (const item of cart.items) {
+    if (!item.promotionId) continue;
+
+    let query = Promotion.findOne({
+      _id: item.promotionId,
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    });
+    if (session) query = query.session(session);
+
+    const promo = await query;
+
+    if (!promo) {
+      // العرض لم يعد نشطاً → نعيد السعر الأصلي كاملاً
+      const extrasTotal = item.extras.reduce((sum, e) => sum + e.price, 0);
+      item.basePrice = item.originalPrice;
+      item.totalItemPrice = (item.originalPrice + extrasTotal) * item.quantity;
+      item.originalPrice = null;
+      item.promotionId = null;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    cart.totalCartPrice = cart.items.reduce(
+      (sum, item) => sum + item.totalItemPrice,
+      0,
+    );
+  }
+
+  return changed;
+};
+
+// AUTH
 exports.forgotPassword = async (req, res) => {
   let user;
   try {
@@ -464,7 +505,6 @@ exports.updateProfile = async (req, res) => {
     res.status(500).json({ message: m.general.serverError });
   }
 };
-// update
 exports.getUserInfo = async (req, res) => {
   try {
     const user = await User.findById(req.user._id ?? req.user.id).select(
@@ -482,6 +522,7 @@ exports.getUserInfo = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 //Address
 exports.GetAddresses = async (req, res) => {
   try {
@@ -573,8 +614,6 @@ exports.AddAddresses = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-// update
-// عند إضافة أكثر من 5 عناوين — يعرضون رسالة "Maximum 5 addresses allowed"
 exports.updateAddress = async (req, res) => {
   try {
     const m = getMessages(req).user;
@@ -680,8 +719,6 @@ exports.setDefaultAddress = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-// update
-// عند حذف العنوان الأخير — يعرضون رسالة "Cannot delete your only address" بدل السماح بالحذف
 exports.deleteAddress = async (req, res) => {
   try {
     const m = getMessages(req).user;
@@ -1461,16 +1498,16 @@ exports.getCart = async (req, res) => {
     if (!cart) {
       return res.status(200).json({
         success: true,
-        cart: {
-          items: [],
-          itemsPrice: 0,
-          deliveryFee: 0,
-          totalCartPrice: 0,
-        },
+        cart: { items: [], itemsPrice: 0, deliveryFee: 0, totalCartPrice: 0 },
       });
     }
 
-    // v3.2 — حساب رسوم التوصيل وضمها لعرض السعر النهائي (بدون تعديل القيمة المحفوظة بالـ DB)
+    // v3.3 — إعادة التحقق من خصومات العناصر (لو انتهى عرض discount)
+    const pricesChanged = await syncCartItemPromotions(cart);
+    if (pricesChanged) {
+      await cart.save();
+    }
+
     const restaurant = await Restaurant.findById(cart.restaurantId).select(
       "country",
     );
@@ -1518,9 +1555,6 @@ function areExtrasEqual(a = [], b = []) {
     (e, i) => e.name === normB[i].name && e.price === normB[i].price,
   );
 }
-
-// update v2.2
-// ── Helper: جلب العروض النشطة على طعام معين ──────────────────
 async function getActivePromotionsForFood(foodId) {
   const now = new Date();
   return Promotion.find({
@@ -1656,7 +1690,6 @@ exports.addToCart = async (req, res) => {
     res.status(500).json({ message: m.general.serverError });
   }
 };
-
 exports.removeFoodFromCart = async (req, res) => {
   try {
     const m = getMessages(req).user;
@@ -1745,7 +1778,6 @@ exports.removeFoodFromCart = async (req, res) => {
   }
 };
 
-// new DE — عند إنشاء الطلب، نحسب الضريبة بدقة ونُرفق تفصيلها في الـ response للعرض في الفاتورة
 // payment
 exports.createPaymentIntent = async (req, res) => {
   try {
@@ -1815,6 +1847,7 @@ exports.createPaymentIntent = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 // orders
 exports.getUserOrders = async (req, res) => {
   try {
@@ -1888,8 +1921,6 @@ exports.getUserOrders = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-// update DE — عند إنشاء الطلب، نحسب الضريبة بدقة ونُرفق تفصيلها في الـ response للعرض في الفاتورة
-// update v2.2
 exports.createOrder = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -1918,6 +1949,8 @@ exports.createOrder = async (req, res) => {
       session.endSession();
       return res.status(400).json({ message: m.order.cartEmpty });
     }
+
+    await syncCartItemPromotions(cart, session);
 
     const items = cart.items.map((item) => ({
       foodId: item.foodId,
@@ -2167,8 +2200,7 @@ exports.clickAd = async (req, res) => {
   }
 };
 
-// GET /user/promotions — كل العروض النشطة (صفحة العروض)
-// new v2.2
+// promotions
 exports.getPromotions = async (req, res) => {
   try {
     const userId = req.user._id ?? req.user.id;
