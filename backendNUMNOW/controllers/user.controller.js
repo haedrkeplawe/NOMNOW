@@ -30,6 +30,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 const calculateDeliveryFee = async (cart, restaurant, session = null) => {
   let deliveryFee = restaurant.country === "DE" ? 3 : 1000;
   const originalDeliveryFee = deliveryFee;
+  let flagChanged = false;
 
   if (cart.hasFreeDelivery && cart.freeDeliveryPromotionId) {
     const now = new Date();
@@ -42,11 +43,18 @@ const calculateDeliveryFee = async (cart, restaurant, session = null) => {
     if (session) query = query.session(session);
 
     const freeDeliveryPromo = await query;
+
     if (freeDeliveryPromo) {
       deliveryFee = 0;
+    } else {
+      // v3.4 — العرض لم يعد نشطاً → ننظف الحقول على مستوى السلة
+      cart.hasFreeDelivery = false;
+      cart.freeDeliveryPromotionId = null;
+      flagChanged = true;
     }
   }
-  return { deliveryFee, originalDeliveryFee };
+
+  return { deliveryFee, originalDeliveryFee, flagChanged };
 };
 
 // التحقق من توفر عرض الحسم على الوجبه
@@ -1502,11 +1510,11 @@ exports.getCart = async (req, res) => {
       });
     }
 
-    // v3.3 — إعادة التحقق من خصومات العناصر (لو انتهى عرض discount)
-    const pricesChanged = await syncCartItemPromotions(cart);
-    if (pricesChanged) {
-      await cart.save();
-    }
+    let needsSave = false;
+
+    // v3.3 — إعادة التحقق من خصومات العناصر
+    const itemsChanged = await syncCartItemPromotions(cart);
+    if (itemsChanged) needsSave = true;
 
     const restaurant = await Restaurant.findById(cart.restaurantId).select(
       "country",
@@ -1519,21 +1527,23 @@ exports.getCart = async (req, res) => {
       const feeResult = await calculateDeliveryFee(cart, restaurant);
       deliveryFee = feeResult.deliveryFee;
       originalDeliveryFee = feeResult.originalDeliveryFee;
+      // v3.4 — لو انتهى عرض التوصيل المجاني
+      if (feeResult.flagChanged) needsSave = true;
     }
 
-    // نحوّل السلة لكائن عادي مشان ما نأثر على الـ document الحقيقي بالـ DB
+    if (needsSave) {
+      await cart.save();
+    }
+
     const cartObj = cart.toObject();
-    const itemsPrice = cartObj.totalCartPrice; // سعر الأصناف فقط (كما هو مخزّن)
+    const itemsPrice = cartObj.totalCartPrice;
 
     cartObj.itemsPrice = itemsPrice;
     cartObj.deliveryFee = deliveryFee;
     cartObj.originalDeliveryFee = originalDeliveryFee;
-    cartObj.totalCartPrice = Number((itemsPrice + deliveryFee).toFixed(2)); // القيمة النهائية للعرض فقط
+    cartObj.totalCartPrice = Number((itemsPrice + deliveryFee).toFixed(2));
 
-    res.status(200).json({
-      success: true,
-      cart: cartObj,
-    });
+    res.status(200).json({ success: true, cart: cartObj });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: m.cart.fetchFailed });
@@ -1989,28 +1999,12 @@ exports.createOrder = async (req, res) => {
       });
     }
 
-    // رسوم التوصيل حسب الدولة (مؤقتة — ستصبح ديناميكية حسب المسافة)
-    // لو في عرض توصيل مجاني على السلة → نتحقق أنه لا يزال نشطاً
-    let deliveryFee = restaurant.country === "DE" ? 3 : 1000;
-
-    // نحفظ القيمة الأصلية دائماً قبل تطبيق أي عرض
-    const originalDeliveryFee = deliveryFee;
-
-    if (cart.hasFreeDelivery && cart.freeDeliveryPromotionId) {
-      const now = new Date();
-      const freeDeliveryPromo = await Promotion.findOne({
-        _id: cart.freeDeliveryPromotionId,
-        isActive: true,
-        startDate: { $lte: now },
-        endDate: { $gte: now },
-      }).session(session);
-
-      if (freeDeliveryPromo) {
-        deliveryFee = 0;
-      }
-      // لو انتهى العرض → يبقى deliveryFee الأصلي بدون إبلاغ هنا
-      // الإبلاغ يصير في order:send لو تحقق هناك
-    }
+    // v3.4 — دالة موحّدة (نفس المستخدمة بـ getCart) + تنظف الحقول العالقة تلقائياً
+    const { deliveryFee, originalDeliveryFee } = await calculateDeliveryFee(
+      cart,
+      restaurant,
+      session,
+    );
 
     const taxRate = restaurant?.taxRate || 0;
 
