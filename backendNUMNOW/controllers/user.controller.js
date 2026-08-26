@@ -25,6 +25,29 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   httpAgent: stripeAgent,
 });
 
+// utils
+const calculateDeliveryFee = async (cart, restaurant, session = null) => {
+  let deliveryFee = restaurant.country === "DE" ? 3 : 1000;
+  const originalDeliveryFee = deliveryFee;
+
+  if (cart.hasFreeDelivery && cart.freeDeliveryPromotionId) {
+    const now = new Date();
+    let query = Promotion.findOne({
+      _id: cart.freeDeliveryPromotionId,
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    });
+    if (session) query = query.session(session);
+
+    const freeDeliveryPromo = await query;
+    if (freeDeliveryPromo) {
+      deliveryFee = 0;
+    }
+  }
+  return { deliveryFee, originalDeliveryFee };
+};
+
 exports.forgotPassword = async (req, res) => {
   let user;
   try {
@@ -705,7 +728,6 @@ exports.deleteAddress = async (req, res) => {
 };
 
 // Restaurant & food
-// new1.1
 exports.search = async (req, res) => {
   try {
     const q = req.query.q?.trim();
@@ -962,7 +984,6 @@ exports.getAllFood = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
-// v3.1
 exports.getRestaurantCategories = async (req, res) => {
   try {
     const restaurantId = req.params.id;
@@ -1442,14 +1463,39 @@ exports.getCart = async (req, res) => {
         success: true,
         cart: {
           items: [],
+          itemsPrice: 0,
+          deliveryFee: 0,
           totalCartPrice: 0,
         },
       });
     }
 
+    // v3.2 — حساب رسوم التوصيل وضمها لعرض السعر النهائي (بدون تعديل القيمة المحفوظة بالـ DB)
+    const restaurant = await Restaurant.findById(cart.restaurantId).select(
+      "country",
+    );
+
+    let deliveryFee = 0;
+    let originalDeliveryFee = 0;
+
+    if (restaurant) {
+      const feeResult = await calculateDeliveryFee(cart, restaurant);
+      deliveryFee = feeResult.deliveryFee;
+      originalDeliveryFee = feeResult.originalDeliveryFee;
+    }
+
+    // نحوّل السلة لكائن عادي مشان ما نأثر على الـ document الحقيقي بالـ DB
+    const cartObj = cart.toObject();
+    const itemsPrice = cartObj.totalCartPrice; // سعر الأصناف فقط (كما هو مخزّن)
+
+    cartObj.itemsPrice = itemsPrice;
+    cartObj.deliveryFee = deliveryFee;
+    cartObj.originalDeliveryFee = originalDeliveryFee;
+    cartObj.totalCartPrice = Number((itemsPrice + deliveryFee).toFixed(2)); // القيمة النهائية للعرض فقط
+
     res.status(200).json({
       success: true,
-      cart,
+      cart: cartObj,
     });
   } catch (err) {
     console.error(err);
@@ -1725,21 +1771,11 @@ exports.createPaymentIntent = async (req, res) => {
     const itemsPrice = cart.totalCartPrice;
     const taxRate = restaurant.taxRate || 7;
 
-    // update v2.2 — نتحقق من عرض التوصيل المجاني قبل حساب المبلغ
-    let deliveryFee = restaurant.country === "DE" ? 3 : 1000;
-
-    if (cart.hasFreeDelivery && cart.freeDeliveryPromotionId) {
-      const now = new Date();
-      const freeDeliveryPromo = await Promotion.findOne({
-        _id: cart.freeDeliveryPromotionId,
-        isActive: true,
-        startDate: { $lte: now },
-        endDate: { $gte: now },
-      });
-      if (freeDeliveryPromo) {
-        deliveryFee = 0;
-      }
-    }
+    const { deliveryFee, originalDeliveryFee } = await calculateDeliveryFee(
+      cart,
+      restaurant,
+      session,
+    );
 
     // DE: taxPrice = ضريبة الطعام (7%) + ضريبة التوصيل (19% — خدمة لوجستية)
     const foodTax = parseFloat(((itemsPrice * taxRate) / 100).toFixed(2));
