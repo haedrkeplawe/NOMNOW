@@ -15,7 +15,7 @@ const {
   cancelActiveSearch,
 } = require("./services/order.service");
 // v3.5
-const { notifyUserOrderStatus } = require("./services/notification.service");
+const { notifyUserOrderStatus } = require("./services/Notification.service");
 
 module.exports = (io, restaurantNS) => {
   restaurantNS.on("connection", (socket) => {
