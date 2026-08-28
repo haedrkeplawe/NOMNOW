@@ -1,0 +1,475 @@
+/* === ADMIN — Orders Map (geo analytics) === */
+
+.omap-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  color: var(--primary-text);
+}
+
+/* ── Header ──────────────────────────────────────────────── */
+.omap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.omap-header h2 {
+  font-size: 22px;
+  font-weight: 600;
+}
+.omap-header p {
+  font-size: 13px;
+  color: var(--secondary-text);
+  margin-top: 3px;
+}
+.omap-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9px;
+  border: 1px solid var(--secondary-border);
+  background: var(--primary-background);
+  color: var(--secondary-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.omap-refresh:hover {
+  background: var(--primary-hover);
+  color: var(--primary-text);
+}
+
+/* ── Filters bar ─────────────────────────────────────────── */
+.omap-filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: var(--primary-background);
+  border: 1px solid var(--secondary-border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.omap-date-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--secondary-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: var(--secondary-text);
+}
+.omap-date-field input {
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--primary-text);
+  font-size: 13px;
+}
+.omap-date-sep {
+  color: var(--secondary-text);
+  font-size: 13px;
+}
+
+.omap-status-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-left: auto;
+}
+.omap-chip {
+  border: 1px solid var(--secondary-border);
+  background: transparent;
+  color: var(--secondary-text);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.omap-chip:hover {
+  background: var(--primary-hover);
+}
+.omap-chip.active {
+  font-weight: 600;
+  border-width: 1px;
+}
+.omap-chip--clear {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #e7000b;
+}
+
+/* ── Summary strip ───────────────────────────────────────── */
+.omap-summary-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+  color: var(--secondary-text);
+}
+.omap-summary-strip strong {
+  color: var(--primary-text);
+}
+.omap-truncated-note {
+  font-size: 12px;
+  color: #b45309;
+  background: #fffbeb;
+  border-radius: 6px;
+  padding: 3px 9px;
+}
+
+/* ── Body layout ─────────────────────────────────────────── */
+.omap-body {
+  display: flex;
+  gap: 14px;
+  min-height: 640px;
+  position: relative;
+}
+
+/* ── Sidebar list ─────────────────────────────────────────── */
+.omap-sidebar {
+  width: 280px;
+  flex-shrink: 0;
+  background: var(--primary-background);
+  border: 1px solid var(--secondary-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.omap-sidebar__head {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--secondary-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary-text);
+}
+.omap-sidebar__list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.omap-row {
+  border: 1px solid var(--secondary-border);
+  border-radius: 9px;
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.omap-row:hover {
+  background: var(--primary-hover);
+}
+.omap-row.active {
+  border-color: var(--primary-orange);
+  background: var(--primary-hover);
+}
+.omap-row__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.omap-row__id {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+.omap-row__addr {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 11.5px;
+  color: var(--secondary-text);
+  line-height: 1.3;
+}
+.omap-row__bottom {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--secondary-text);
+}
+.omap-row__bottom span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* ── Map ─────────────────────────────────────────────────── */
+.omap-map-wrap {
+  flex: 1;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--secondary-border);
+}
+.omap-map {
+  width: 100%;
+  height: 100%;
+  min-height: 640px;
+}
+.omap-legend {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--primary-background);
+  border: 1px solid var(--secondary-border);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 11.5px;
+  color: var(--secondary-text);
+  box-shadow: 0 2px 8px var(--primary-shadow);
+}
+.omap-legend__dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* ── Badges ──────────────────────────────────────────────── */
+.omap-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
+/* ── Markers ─────────────────────────────────────────────── */
+.omap-marker {
+  font-size: 22px;
+  line-height: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+/* ── Detail panel ────────────────────────────────────────── */
+.omap-panel {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--primary-background);
+  border: 1px solid var(--secondary-border);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.omap-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--secondary-border);
+}
+.omap-panel__head h3 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.omap-panel__head p {
+  font-size: 11.5px;
+  color: var(--secondary-text);
+  margin-top: 2px;
+}
+.omap-panel__head-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.omap-panel__head-right button {
+  background: none;
+  border: none;
+  color: var(--secondary-text);
+  cursor: pointer;
+  display: flex;
+}
+.omap-panel__head-right button:hover {
+  color: var(--primary-text);
+}
+
+.omap-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.omap-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--secondary-text);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 6px;
+}
+.omap-section__name {
+  font-size: 13.5px;
+  font-weight: 600;
+}
+.omap-section__row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  color: var(--secondary-text);
+  margin-top: 3px;
+}
+.omap-na {
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.omap-toggle-btn {
+  margin-top: 8px;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--secondary-border);
+  background: transparent;
+  color: var(--secondary-text);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.omap-toggle-btn:hover {
+  background: var(--primary-hover);
+}
+.omap-toggle-btn.active {
+  border-color: var(--primary-orange);
+  color: var(--primary-orange);
+  background: #fff3ef;
+}
+
+/* ── Unified journey action (top of detail panel) ───────────── */
+.omap-journey {
+  border: 1px solid var(--secondary-border);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--primary-hover);
+}
+.omap-journey-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--secondary-border);
+  background: var(--primary-background);
+  color: var(--primary-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.omap-journey-btn:hover {
+  background: var(--primary-hover);
+}
+.omap-journey-btn.active {
+  border-color: var(--primary-orange);
+  color: var(--primary-orange);
+  background: #fff3ef;
+}
+.omap-journey-legend {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.omap-journey-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--secondary-text);
+}
+.omap-journey-legend__off {
+  opacity: 0.6;
+  font-style: italic;
+}
+.omap-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.omap-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--secondary-text);
+  padding: 2px 0;
+}
+.omap-item--total {
+  border-top: 1px solid var(--secondary-border);
+  margin-top: 4px;
+  padding-top: 6px;
+  font-weight: 700;
+  color: var(--primary-text);
+}
+
+/* ── Empty / loading ─────────────────────────────────────── */
+.omap-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 40px 10px;
+  color: var(--secondary-text);
+  font-size: 13px;
+  text-align: center;
+}
+.omap-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--secondary-border);
+  border-top-color: var(--primary-orange);
+  border-radius: 50%;
+  animation: omap-spin 0.8s linear infinite;
+}
+@keyframes omap-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 1200px) {
+  .omap-body {
+    flex-wrap: wrap;
+  }
+  .omap-panel {
+    width: 100%;
+  }
+}
+@media (max-width: 900px) {
+  .omap-sidebar {
+    width: 100%;
+    max-height: 240px;
+  }
+  .omap-map,
+  .omap-map-wrap {
+    min-height: 420px;
+  }
+  .omap-status-chips {
+    margin-left: 0;
+  }
+}
