@@ -5,7 +5,7 @@ const Restaurant = require("../../models/restaurant");
 // السائق الموحّدة، حتى يمر إشعار السائق من نفس المسار المعماري
 // المستخدم لإشعار اليوزر (وجاهز لتفعيل التخزين بقاعدة البيانات لاحقاً
 // من مكان واحد فقط — راجع utils/notificationDispatcher.js)
-const { notifyDriverNewOrderRequest } = require("./driverNotification.service");
+const { notifyDriverNewOrderRequest } = require("./drivernotification.service");
 
 const DRIVER_RESPONSE_TIMEOUT = 30000;
 const MAX_ATTEMPTS = 3;
