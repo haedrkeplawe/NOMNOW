@@ -780,7 +780,31 @@ exports.search = async (req, res) => {
         .lean(),
     ]);
 
-    res.status(200).json({ restaurants, foods });
+    // ── إرفاق العروض النشطة مع كل صنف (نفس منطق getAllFoodInRestaurant) ──
+    const now = new Date();
+    const foodIds = foods.map((f) => f._id);
+    const activePromotions = await Promotion.find({
+      foodId: { $in: foodIds },
+      isActive: true,
+      startDate: { $lte: now },
+      endDate: { $gte: now },
+    })
+      .select("type discountValue endDate foodId")
+      .lean();
+
+    const promotionsMap = {};
+    activePromotions.forEach((p) => {
+      const key = p.foodId.toString();
+      if (!promotionsMap[key]) promotionsMap[key] = [];
+      promotionsMap[key].push(p);
+    });
+
+    const foodsWithPromotions = foods.map((f) => ({
+      ...f,
+      promotions: promotionsMap[f._id.toString()] || [],
+    }));
+
+    res.status(200).json({ restaurants, foods: foodsWithPromotions });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
