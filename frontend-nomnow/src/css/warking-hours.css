@@ -1,0 +1,109 @@
+.warking-hours-page {
+}
+
+.warking-hours-page > .text {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.warking-hours-page > .text > div h2 {
+  font-size: 29px;
+  font-weight: 400;
+  color: var(--primary-text);
+}
+.warking-hours-page > .text > div p {
+  color: #837f7f;
+}
+.warking-hours-page .status {
+  color: #ffffff;
+  padding: 29px 23px;
+  border-radius: 14px;
+  margin-top: 20px;
+}
+.warking-hours-page .status.on {
+  background: #0e8928;
+}
+.warking-hours-page .status.off {
+  background: var(--primary-orange);
+}
+.warking-hours-page .status p {
+  color: #ffffffbf;
+  font-size: 14px;
+}
+.warking-hours-page .status .top {
+  display: flex;
+  justify-content: space-between;
+}
+.warking-hours-page .status .top .left {
+}
+.warking-hours-page .status .top .left > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.warking-hours-page .status .top .left > div h2 {
+  font-size: 20px;
+  font-weight: 400;
+}
+.warking-hours-page .status .top .right {
+}
+.warking-hours-page .status .top .status-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.warking-hours-page .status .top .toggle {
+  width: 85px;
+  height: 38px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  transition: 0.3s;
+  position: relative;
+  font-size: 14px;
+}
+
+.warking-hours-page .status .top .toggle.on {
+  background: #00000033;
+}
+
+.warking-hours-page .status .top .toggle.off {
+  background: #00000033;
+}
+
+.warking-hours-page .status .top .toggle .circle {
+  width: 30px;
+  height: 30px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.warking-hours-page .status .top .toggle.on .circle {
+  transform: translateX(48px);
+}
+
+.warking-hours-page .status .top .toggle.off .circle {
+  transform: translateX(0);
+}
+
+.warking-hours-page .status .top .toggle .text {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  color: #fff;
+  font-weight: 500;
+}
+.warking-hours-page .status .bottom {
+  display: flex;
+  gap: 15px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #ffffff4f;
+  margin-top: 10px;
+  align-items: center;
+}
