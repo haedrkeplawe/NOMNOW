@@ -1,0 +1,493 @@
+/* ═══════════════════════════════════════════════════════════════════
+   i18n.css — Language Switcher + Full RTL Support
+   يجب أن يُحمَّل آخر import في index.js
+═══════════════════════════════════════════════════════════════════ */
+
+/* ── 1. خط عربي ─────────────────────────────────────────────── */
+[dir="rtl"],
+[dir="rtl"] * {
+  font-family: "Cairo", "Segoe UI", Tahoma, Geneva, sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
+/* ── 2. Direction على كل شيء ────────────────────────────────── */
+[dir="rtl"] body,
+[dir="rtl"] #root,
+[dir="rtl"] main.main,
+[dir="rtl"] main.main > div {
+  direction: rtl !important;
+  text-align: right;
+}
+
+/* ── 3. إصلاح شامل للنصوص ──────────────────────────────────── */
+/* [dir="rtl"] h1,
+[dir="rtl"] h2,
+[dir="rtl"] h3,
+[dir="rtl"] h4,
+[dir="rtl"] h5,
+[dir="rtl"] h6,
+[dir="rtl"] p,
+[dir="rtl"] label,
+[dir="rtl"] li,
+[dir="rtl"] td,
+[dir="rtl"] th {
+  text-align: right !important;
+} */
+
+/* استثناء: عناصر تبقى مُتمركزة */
+[dir="rtl"] .login-page .top,
+[dir="rtl"] .login-page .top h2,
+[dir="rtl"] .login-page .top p,
+[dir="rtl"] .login-page .top span,
+[dir="rtl"] .login-page .box p,
+[dir="rtl"] .login-page .resend,
+[dir="rtl"] .orders-page .orders-container > p,
+[dir="rtl"] .hm-tbl__empty,
+[dir="rtl"] .fin-ord-empty,
+[dir="rtl"] .rv-empty,
+[dir="rtl"] .rv-empty p,
+[dir="rtl"] .fin-center,
+[dir="rtl"] .fin-center span,
+[dir="rtl"] .sr-center,
+[dir="rtl"] .sr-center span,
+[dir="rtl"] .hm-center {
+  text-align: center !important;
+}
+
+/* ── 4. إصلاح الـ inputs ─────────────────────────────────────── */
+[dir="rtl"]
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  text-align: right !important;
+  direction: ltr !important;
+}
+[dir="rtl"] textarea {
+  text-align: right !important;
+  direction: rtl !important;
+}
+/* OTP يبقى LTR */
+[dir="rtl"] .otp-input {
+  direction: ltr !important;
+  text-align: center !important;
+}
+[dir="rtl"] .otp-container {
+  direction: ltr !important;
+}
+
+/* ── 5. إصلاح الـ flex containers الأساسية ──────────────────── */
+[dir="rtl"] .globale-close,
+[dir="rtl"] .globale-menu,
+[dir="rtl"] .navbar,
+[dir="rtl"] .navbar .menu,
+[dir="rtl"] .navbar .menu .left,
+[dir="rtl"] .navbar .menu .right,
+[dir="rtl"] .nb-user__trigger,
+[dir="rtl"] .nb-dropdown__item,
+[dir="rtl"] .nb-logout-modal__actions,
+[dir="rtl"] .nb-profile-modal__header,
+[dir="rtl"] .nb-profile-modal__actions {
+  flex-direction: row-reverse !important;
+}
+
+[dir="rtl"] .globale-close .left {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .globale-head-create button {
+  flex-direction: row-reverse !important;
+}
+
+/* ── 6. Sidebar ──────────────────────────────────────────────── */
+[dir="rtl"] aside.sidebar {
+  border-right: none !important;
+  border-left: 1.1px solid var(--primary-shadow) !important;
+}
+[dir="rtl"] aside.sidebar .top {
+  text-align: start !important;
+}
+
+/* ── 7. Navbar ───────────────────────────────────────────────── */
+[dir="rtl"] .navbar .logo {
+  border-right: none !important;
+  border-left: 1.1px solid var(--primary-border) !important;
+}
+[dir="rtl"] .navbar .menu .left .condition::before {
+  margin-right: 0 !important;
+  margin-left: 5px !important;
+}
+[dir="rtl"] .nb-dropdown {
+  right: auto !important;
+  left: 0 !important;
+}
+[dir="rtl"] .nb-profile-modal__cam {
+  right: auto !important;
+  left: 0 !important;
+}
+/* ── 8. Login ────────────────────────────────────────────────── */
+[dir="rtl"] .login-page .box {
+  direction: rtl !important;
+}
+[dir="rtl"] .login-page .box button {
+  flex-direction: row-reverse !important;
+}
+
+/* ── 9. Orders ───────────────────────────────────────────────── */
+[dir="rtl"] .orders-page .order-item {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .order-item-left {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .order-item-fee {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .order-item-extras {
+  flex-direction: row-reverse !important;
+  flex-wrap: wrap !important;
+}
+[dir="rtl"] .orders-page .customer-information .info {
+  margin-left: 0 !important;
+  margin-right: 16px !important;
+}
+[dir="rtl"] .orders-page .driver-information .info-1 .info > div {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .order-card-footer {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .order-footer-left {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .order-total {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .order-card-actions {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .orders-page .driver-alert {
+  flex-direction: row-reverse !important;
+}
+
+/* ── 10. Menu Management ─────────────────────────────────────── */
+[dir="rtl"] .menu-management .globale-menu {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .globale-menu > div {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .globale-menu button.cat .upload-icon {
+  right: auto !important;
+  left: -5px !important;
+}
+[dir="rtl"] .menu-management .globale-menu button.cat .delete-icon {
+  left: auto !important;
+  right: -5px !important;
+}
+[dir="rtl"] .menu-management .menu-items .item .status {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .menu-items .item .status .icon {
+  margin-right: 0 !important;
+  margin-left: 5px !important;
+}
+[dir="rtl"] .menu-management .create-food .one {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .create-food .one .left {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .create-food form .input-row {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .create-food form .ingredients-list li {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .create-food form .ingredients-list .actions {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .create-food form .select-box {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .create-food form .button {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .create-food form .toggle.on .circle {
+  transform: translateX(-90px) !important;
+}
+[dir="rtl"] .menu-management .create-food form .toggle.off .circle {
+  transform: translateX(0px) !important;
+}
+[dir="rtl"] .menu-management .view-food__row {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .view-food__extra-item {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .view-food__size-item {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .view-food__tags {
+  flex-direction: row-reverse !important;
+  flex-wrap: wrap !important;
+}
+[dir="rtl"] .menu-management .form .one {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .form .one .left {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .menu-management .form .inputs {
+  flex-direction: row-reverse !important;
+}
+
+/* ── 11. Home ────────────────────────────────────────────────── */
+[dir="rtl"] .hm-stat__top {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .hm-stat__change {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .hm-pie-legend__row {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .hm-top-row {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .hm-top-qty {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .hm-tbl thead th {
+  text-align: right !important;
+}
+[dir="rtl"] .hm-tbl td {
+  text-align: right !important;
+}
+[dir="rtl"] .hm-tbl__empty {
+  text-align: center !important;
+}
+
+/* ── 12. Finance ─────────────────────────────────────────────── */
+[dir="rtl"] .fin-btn {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-alert {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-info {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-card__top {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-orders-head {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-orders-controls {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-orders-tabs {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-ord-meal {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-ord-detail__item {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-ord-detail__summary > div {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-ord-detail__summary {
+  border-left: none !important;
+  border-right: 1px solid var(--secondary-border) !important;
+  padding-left: 0 !important;
+  padding-right: 20px !important;
+}
+[dir="rtl"] .fin-ord-toggle {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-modal__header {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-modal__available {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-modal__confirm-info {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-modal__footer {
+  flex-direction: row-reverse !important;
+  justify-content: flex-start !important;
+}
+[dir="rtl"] .fin-pagination {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .fin-pagination__btn {
+  flex-direction: row-reverse !important;
+}
+
+/* ── 13. Settings ────────────────────────────────────────────── */
+[dir="rtl"] .setting-page form .map button {
+  right: auto !important;
+  left: 13px !important;
+}
+
+/* ── 14. Sales Reports ───────────────────────────────────────── */
+[dir="rtl"] .sr-stat__change {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .sr-legend {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .sr-legend__item {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .sr-pie-legend__left {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .sr-profit-bar__right {
+  flex-direction: row-reverse !important;
+}
+
+/* ── 15. Customer Reviews ────────────────────────────────────── */
+[dir="rtl"] .reviews-page .top .right > div {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .reviews-page .top .right > div .star {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .reviews-page .top .right > div .orange {
+  left: auto !important;
+  right: 0 !important;
+}
+[dir="rtl"] .review-header {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .reviews-page .rating-time {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .reviews-page .rv-stars {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .reviews-page .rv-food-name {
+  flex-direction: row-reverse !important;
+  display: flex !important;
+  gap: 4px !important;
+}
+
+/* ── 16. Working Hours ───────────────────────────────────────── */
+[dir="rtl"] .warking-hours-page .status .top {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .warking-hours-page .status .top .left > div {
+  flex-direction: row-reverse !important;
+}
+[dir="rtl"] .warking-hours-page .status .bottom {
+  flex-direction: row-reverse !important;
+}
+/* Toggle RTL — الكرة تبدأ من اليمين */
+[dir="rtl"] .warking-hours-page .status .top .toggle.on .circle {
+  transform: translateX(-47px) !important;
+}
+[dir="rtl"] .warking-hours-page .status .top .toggle.off .circle {
+  transform: translateX(0px) !important;
+}
+
+/* ── 17. Globale Popup position ──────────────────────────────── */
+[dir="rtl"] .globale-popp {
+  right: auto !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+/* ── 18. Search button ───────────────────────────────────────── */
+[dir="rtl"] .globale-search button {
+  right: auto !important;
+  left: 0 !important;
+}
+[dir="rtl"] .globale-search input {
+  padding-right: 15px !important;
+  padding-left: 52px !important;
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LANGUAGE SWITCHER
+══════════════════════════════════════════════════════════════ */
+.lang-switcher {
+  position: relative;
+}
+.lang-switcher__trigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--primary-border);
+  background: var(--primary-background);
+  color: var(--primary-text);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+}
+.lang-switcher__trigger:hover {
+  background: var(--primary-hover);
+  border-color: var(--secondary-text);
+}
+.lang-switcher__flag {
+  font-size: 15px;
+  line-height: 1;
+}
+.lang-switcher__label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+.lang-switcher__chevron {
+  color: var(--secondary-text);
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+.lang-switcher__chevron.open {
+  transform: rotate(180deg);
+}
+.lang-switcher__dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--primary-background);
+  border: 1px solid var(--primary-border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  overflow: hidden;
+  z-index: 1000;
+  min-width: 110px;
+}
+[dir="rtl"] .lang-switcher__dropdown {
+  right: auto !important;
+  left: 0 !important;
+}
+.lang-switcher__option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 14px;
+  background: none;
+  border: none;
+  color: var(--primary-text);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s;
+  text-align: left;
+}
+[dir="rtl"] .lang-switcher__option {
+  text-align: right !important;
+  flex-direction: row-reverse !important;
+}
+.lang-switcher__option:hover {
+  background: var(--primary-hover);
+}
+.lang-switcher__option.active {
+  color: #f54900;
+  font-weight: 600;
+  background: var(--primary-hover);
+}
