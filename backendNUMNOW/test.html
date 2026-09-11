@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>🧪 Socket Test</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://js.stripe.com/v3/"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #111;
+            color: #fff;
+            margin: 0;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .panel {
+            background: #1e1e1e;
+            padding: 15px;
+            border-radius: 10px;
+            max-width: 400px;
+        }
+
+        .panel h2 {
+            margin: 0 0 12px;
+            font-size: 16px;
+        }
+
+        input {
+            width: 100%;
+            padding: 7px;
+            border-radius: 6px;
+            border: none;
+            margin-bottom: 8px;
+            display: block;
+            font-size: 13px;
+        }
+
+        button {
+            padding: 7px 12px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .connect {
+            background: #1447e6;
+            color: white;
+        }
+
+        .disconnect {
+            background: #555;
+            color: white;
+        }
+
+        .send {
+            background: #f54900;
+            color: white;
+        }
+
+        .accept {
+            background: #008236;
+            color: white;
+        }
+
+        .reject {
+            background: #e7000b;
+            color: white;
+        }
+
+        .online-btn {
+            background: #008236;
+            color: white;
+        }
+
+        .offline-btn {
+            background: #b45309;
+            color: white;
+        }
+
+        pre {
+            background: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 8px;
+            height: 160px;
+            overflow-y: auto;
+            font-size: 11px;
+            margin-top: 8px;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #333;
+            margin: 10px 0;
+        }
+
+        .status-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            padding: 6px 10px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        .status-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-badge.online {
+            background: #f0fdf4;
+            color: #008236;
+        }
+
+        .status-badge.offline {
+            background: #fef9c3;
+            color: #b45309;
+        }
+
+        .status-badge.busy {
+            background: #fef2f2;
+            color: #e7000b;
+        }
+
+        .section-title {
+            text-align: center;
+            color: #888;
+            font-size: 13px;
+            margin: 20px 0 8px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>🧪 NomNow Socket Test</h1>
+
+    <!-- ==================== GERMAN PAYMENT ==================== -->
+    <div class="section-title">🇩🇪 German User — Payment Flow</div>
+    <div class="grid">
+
+        <div class="panel" style="max-width:100%">
+            <h2>🇩🇪 German Order & Payment Test</h2>
+            <input id="de-token" placeholder="Access Token (German User)" />
+            <input id="de-orderId" placeholder="Order ID (بعد الإنشاء)" />
+            <input id="de-paymentIntentId" placeholder="Payment Intent ID (بعد create-intent)" />
+            <hr class="divider">
+
+            <!-- Step 1 -->
+            <button class="send" onclick="deCreateOrder()">1️⃣ إنشاء الأوردر</button>
+            <!-- Step 2 -->
+            <button class="connect" onclick="deCreateIntent()">2️⃣ إنشاء Payment Intent</button>
+            <!-- Step 3 -->
+            <button style="background:#7c3aed;color:white" onclick="deShowPayment()">3️⃣ عرض نموذج الدفع</button>
+            <!-- Step 4 -->
+            <button class="accept" onclick="deSendOrder()">4️⃣ إرسال للمطعم (بعد الدفع)</button>
+
+            <div id="de-payment-form" style="display:none;margin-top:12px;">
+                <div id="de-payment-element"></div>
+                <button class="send" style="margin-top:10px;width:100%" onclick="deConfirmPayment()">💳 تأكيد
+                    الدفع</button>
+            </div>
+
+            <pre id="de-log"></pre>
+        </div>
+
+    </div>
+
+    <!-- ==================== USERS ==================== -->
+    <div class="section-title">👤 Users</div>
+    <div class="grid">
+
+        <!-- User 1 -->
+        <div class="panel">
+            <h2>👤 User 1</h2>
+            <input id="u1-token" placeholder="Access Token" />
+            <input id="u1-orderId" placeholder="Order ID" />
+            <button class="connect" onclick="userConnect(1)">Connect</button>
+            <button class="send" onclick="userSendOrder(1)">إرسال الطلب</button>
+            <button class="disconnect" onclick="userDisconnect(1)">Disconnect</button>
+            <button onclick="userConfirmDelivery(1)">✅ تأكيد الاستلام</button>
+            <pre id="u1-log"></pre>
+        </div>
+
+        <!-- User 2 -->
+        <div class="panel">
+            <h2>👤 User 2</h2>
+            <input id="u2-token" placeholder="Access Token" />
+            <input id="u2-orderId" placeholder="Order ID" />
+            <button class="connect" onclick="userConnect(2)">Connect</button>
+            <button class="send" onclick="userSendOrder(2)">إرسال الطلب</button>
+            <button class="disconnect" onclick="userDisconnect(2)">Disconnect</button>
+            <button onclick="userConfirmDelivery(2)">✅ تأكيد الاستلام</button>
+            <pre id="u2-log"></pre>
+
+        </div>
+
+    </div>
+
+    <!-- ==================== DRIVERS ==================== -->
+    <div class="section-title">🚗 Drivers</div>
+    <div class="grid-3">
+
+        <!-- Driver 1 -->
+        <div class="panel">
+            <h2>🚗 Driver 1</h2>
+            <input id="d1-token" placeholder="Access Token" />
+            <input id="d1-orderId" placeholder="Order ID" />
+            <button class="connect" onclick="driverConnect(1)">Connect</button>
+            <button class="disconnect" onclick="driverDisconnect(1)">Disconnect</button>
+            <hr class="divider">
+            <div class="status-bar">
+                <span>Status:</span>
+                <span class="status-badge offline" id="d1-badge">offline</span>
+            </div>
+            <button class="online-btn" onclick="driverGoOnline(1)">🟢 Online</button>
+            <button class="offline-btn" onclick="driverGoOffline(1)">🔴 Offline</button>
+            <hr class="divider">
+            <button class="accept" onclick="driverRespond(1, 'accepted')">✅ قبول</button>
+            <button class="reject" onclick="driverRespond(1, 'rejected')">❌ رفض</button>
+            <button onclick="driverStartDelivery(1)">🛵 Start Delivery</button>
+
+            <button onclick="driverDelivered(1)">📦 Delivered</button>
+            <pre id="d1-log"></pre>
+        </div>
+
+        <!-- Driver 2 -->
+        <div class="panel">
+            <h2>🚗 Driver 2</h2>
+            <input id="d2-token" placeholder="Access Token" />
+            <input id="d2-orderId" placeholder="Order ID" />
+            <button class="connect" onclick="driverConnect(2)">Connect</button>
+            <button class="disconnect" onclick="driverDisconnect(2)">Disconnect</button>
+            <hr class="divider">
+            <div class="status-bar">
+                <span>Status:</span>
+                <span class="status-badge offline" id="d2-badge">offline</span>
+            </div>
+            <button class="online-btn" onclick="driverGoOnline(2)">🟢 Online</button>
+            <button class="offline-btn" onclick="driverGoOffline(2)">🔴 Offline</button>
+            <hr class="divider">
+            <button class="accept" onclick="driverRespond(2, 'accepted')">✅ قبول</button>
+            <button class="reject" onclick="driverRespond(2, 'rejected')">❌ رفض</button>
+            <button onclick="driverStartDelivery(2)">🛵 Start Delivery</button>
+
+            <button onclick="driverDelivered(2)">📦 Delivered</button>
+            <pre id="d2-log"></pre>
+        </div>
+
+        <!-- Driver 3 -->
+        <div class="panel">
+            <h2>🚗 Driver 3</h2>
+            <input id="d3-token" placeholder="Access Token" />
+            <input id="d3-orderId" placeholder="Order ID" />
+            <button class="connect" onclick="driverConnect(3)">Connect</button>
+            <button class="disconnect" onclick="driverDisconnect(3)">Disconnect</button>
+            <hr class="divider">
+            <div class="status-bar">
+                <span>Status:</span>
+                <span class="status-badge offline" id="d3-badge">offline</span>
+            </div>
+            <button class="online-btn" onclick="driverGoOnline(3)">🟢 Online</button>
+            <button class="offline-btn" onclick="driverGoOffline(3)">🔴 Offline</button>
+            <hr class="divider">
+            <button class="accept" onclick="driverRespond(3, 'accepted')">✅ قبول</button>
+            <button class="reject" onclick="driverRespond(3, 'rejected')">❌ رفض</button>
+            <button onclick="driverStartDelivery(3)">🛵 Start Delivery</button>
+
+            <button onclick="driverDelivered(3)">📦 Delivered</button>
+            <pre id="d3-log"></pre>
+        </div>
+
+    </div>
+
+    <script>
+        const userSockets = {};
+        const driverSockets = {};
+        const SOCKET_URL = "http://localhost:4000";
+
+        // ==================== GERMAN PAYMENT ====================
+        const API = "http://localhost:4000/api";
+        const STRIPE_PK = "pk_test_51TLs8ULziGG7MRaTYJoVvxKyhZ7CaTdrdWdFIeC2RQJjtnTp7fKjOvnGpfVNHjRJ0lYfGvuqWYdyDCMrknER6yDD00kGBkjONe";
+        let stripeInstance = null;
+        let stripeElements = null;
+        let deSocket = null;
+
+        function deLog(msg) {
+            const el = document.getElementById("de-log");
+            el.textContent += new Date().toLocaleTimeString() + " → " + msg + "\n";
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function deCreateOrder() {
+            const token = document.getElementById("de-token").value.trim();
+            if (!token) return deLog("❌ أدخل التوكن");
+            try {
+                const res = await fetch(`${API}/user/order`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+                    body: JSON.stringify({
+                        deliveryAddress: { fullAddress: "Test Street, Berlin, Germany" },
+                        paymentMethod: "visa",
+                        notes: "Test order"
+                    })
+                });
+                const data = await res.json();
+                if (data.order) {
+                    document.getElementById("de-orderId").value = data.order._id;
+                    deLog("✅ Order created: " + data.order._id + " | status: " + data.order.orderStatus);
+                } else {
+                    deLog("❌ " + JSON.stringify(data));
+                }
+            } catch (e) {
+                deLog("❌ Error: " + e.message);
+            }
+        }
+
+        async function deCreateIntent() {
+            const token = document.getElementById("de-token").value.trim();
+            if (!token) return deLog("❌ أدخل التوكن");
+            try {
+                const res = await fetch(`${API}/user/payment/create-intent`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.clientSecret) {
+                    document.getElementById("de-paymentIntentId").value = data.paymentIntentId;
+                    deLog("✅ Payment Intent: " + data.paymentIntentId + " | Amount: " + data.amount + " EUR");
+                    // تخزين للاستخدام لاحقاً
+                    window.deClientSecret = data.clientSecret;
+                } else {
+                    deLog("❌ " + JSON.stringify(data));
+                }
+            } catch (e) {
+                deLog("❌ Error: " + e.message);
+            }
+        }
+
+        function deShowPayment() {
+            if (!window.deClientSecret) return deLog("❌ أنشئ Payment Intent أولاً");
+            stripeInstance = Stripe(STRIPE_PK);
+            stripeElements = stripeInstance.elements({ clientSecret: window.deClientSecret });
+            const paymentElement = stripeElements.create("payment");
+            document.getElementById("de-payment-element").innerHTML = "";
+            paymentElement.mount("#de-payment-element");
+            document.getElementById("de-payment-form").style.display = "block";
+            deLog("💳 نموذج الدفع جاهز — أدخل بيانات البطاقة");
+        }
+
+        async function deConfirmPayment() {
+            if (!stripeInstance || !stripeElements) return deLog("❌ افتح نموذج الدفع أولاً");
+            deLog("⏳ جاري تأكيد الدفع...");
+            const { error, paymentIntent } = await stripeInstance.confirmPayment({
+                elements: stripeElements,
+                redirect: "if_required",
+            });
+            if (error) {
+                deLog("❌ Payment failed: " + error.message);
+            } else if (paymentIntent.status === "succeeded") {
+                deLog("✅ Payment succeeded! Status: " + paymentIntent.status);
+                document.getElementById("de-payment-form").style.display = "none";
+            }
+        }
+
+        function deSendOrder() {
+            const token = document.getElementById("de-token").value.trim();
+            const orderId = document.getElementById("de-orderId").value.trim();
+            const paymentIntentId = document.getElementById("de-paymentIntentId").value.trim();
+            if (!token) return deLog("❌ أدخل التوكن");
+            if (!orderId) return deLog("❌ أدخل الـ orderId");
+            if (!paymentIntentId) return deLog("❌ أدخل الـ paymentIntentId");
+
+            if (!deSocket?.connected) {
+                deSocket = io("http://localhost:4000/user", { auth: { token }, withCredentials: true });
+                deSocket.on("connect", () => {
+                    deLog("✅ Socket connected — إرسال الطلب...");
+                    deSocket.emit("order:send", { orderId, paymentIntentId });
+                });
+                deSocket.on("order:sent", (d) => deLog("✅ order:sent → " + JSON.stringify(d)));
+                deSocket.on("order:error", (d) => deLog("❌ order:error → " + d.message));
+                deSocket.on("connect_error", (e) => deLog("❌ Socket error: " + e.message));
+            } else {
+                deSocket.emit("order:send", { orderId, paymentIntentId });
+                deLog("📤 order:send → " + orderId);
+            }
+        }
+        function log(id, msg) {
+            const el = document.getElementById(id);
+            el.textContent += new Date().toLocaleTimeString() + " → " + msg + "\n";
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function setDriverBadge(n, status) {
+            const badge = document.getElementById(`d${n}-badge`);
+            badge.textContent = status;
+            badge.className = "status-badge " + status;
+        }
+
+        // ==================== USERS ====================
+        function userConnect(n) {
+            const token = document.getElementById(`u${n}-token`).value.trim();
+            if (!token) return log(`u${n}-log`, "❌ أدخل التوكن");
+
+            const socket = io(`${SOCKET_URL}/user`, { auth: { token }, withCredentials: true });
+            userSockets[n] = socket;
+
+            socket.on("connect", () => log(`u${n}-log`, "✅ Connected: " + socket.id));
+            socket.on("connect_error", (e) => log(`u${n}-log`, "❌ " + e.message));
+            socket.on("disconnect", () => log(`u${n}-log`, "🔌 Disconnected"));
+
+            socket.on("order:sent", (d) => log(`u${n}-log`, "✅ order:sent → " + JSON.stringify(d)));
+            socket.on("order:error", (d) => log(`u${n}-log`, "❌ order:error → " + d.message));
+            socket.on("order:statusUpdated", (d) => {
+                const icons = { accepted: "✅", cancelled: "❌", preparing: "👨‍🍳", ready: "📦", picked_up: "🚗", on_the_way: "🛵", delivered: "🏠" };
+                log(`u${n}-log`, `${icons[d.status] || "🔔"} statusUpdated → ${d.orderNumber} : ${d.status}`);
+            });
+
+            socket.on("order:confirmDelivery", (d) =>
+                log(`u${n}-log`, `🔔 confirmDelivery → ${d.orderNumber} : ${d.message}`)
+            );
+        }
+
+        function userSendOrder(n) {
+            const socket = userSockets[n];
+            if (!socket?.connected) return log(`u${n}-log`, "❌ مش متصل");
+            const orderId = document.getElementById(`u${n}-orderId`).value.trim();
+            if (!orderId) return log(`u${n}-log`, "❌ أدخل الـ orderId");
+            socket.emit("order:send", { orderId });
+            log(`u${n}-log`, "📤 order:send → " + orderId);
+        }
+
+        function userDisconnect(n) {
+            userSockets[n]?.disconnect();
+        }
+
+        // ==================== DRIVERS ====================
+        function driverConnect(n) {
+            const token = document.getElementById(`d${n}-token`).value.trim();
+            if (!token) return log(`d${n}-log`, "❌ أدخل التوكن");
+
+            const socket = io(`${SOCKET_URL}/driver`, { auth: { token }, withCredentials: true });
+            driverSockets[n] = socket;
+
+            socket.on("connect", () => log(`d${n}-log`, "✅ Connected: " + socket.id));
+            socket.on("connect_error", (e) => log(`d${n}-log`, "❌ " + e.message));
+            socket.on("disconnect", () => {
+                log(`d${n}-log`, "🔌 Disconnected");
+                setDriverBadge(n, "offline");
+            });
+
+            socket.on("driver:currentStatus", (d) => {
+                setDriverBadge(n, d.availability);
+                log(`d${n}-log`, `📡 Current status: ${d.availability}`);
+            });
+
+            socket.on("order:error", (d) => log(`d${n}-log`, "❌ order:error → " + d.message));
+
+            // بعد — كل سائق يحفظ orderId خاصه فقط:
+            socket.on("order:driverRequest", (d) => {
+                // بس خزن الـ orderId إذا وصلك أنت
+                if (!document.getElementById(`d${n}-orderId`).value) {
+                    document.getElementById(`d${n}-orderId`).value = d.orderId;
+                }
+                log(`d${n}-log`, "🆕 driverRequest → " + JSON.stringify(d));
+            });
+            socket.on("order:driverRequest:accepted", (d) =>
+                log(`d${n}-log`, "✅ accepted → order: " + d.order?.orderNumber)
+            );
+            socket.on("order:driverRequest:rejected", (d) =>
+                log(`d${n}-log`, "🚫 rejected → " + d.message)
+            );
+            socket.on("order:driverRequest:expired", (d) =>
+                log(`d${n}-log`, "⏰ expired → " + d.message)
+            );
+            socket.on("order:statusUpdated", (d) =>
+                log(`d${n}-log`, `🔔 statusUpdated → ${d.orderNumber} : ${d.status}`)
+            );
+            socket.on("order:cashLimit:exceeded", (d) =>
+                log(`d${n}-log`, `💰 cashLimit:exceeded → collected: ${d.cashCollected} / limit: ${d.cashCreditLimit} | order: ${d.orderTotal} | ${d.message}`)
+            );
+
+
+        }
+
+        function driverGoOnline(n) {
+            const socket = driverSockets[n];
+            if (!socket?.connected) return log(`d${n}-log`, "❌ مش متصل");
+            socket.emit("driver:goOnline");
+            log(`d${n}-log`, "🟢 driver:goOnline");
+
+            // ✅ انتظر رد السيرفر قبل تحديث الـ badge
+            socket.once("driver:goOnline:error", (d) => {
+                log(`d${n}-log`, "❌ goOnline error → " + d.message);
+            });
+        }
+
+        function driverGoOffline(n) {
+            const socket = driverSockets[n];
+            if (!socket?.connected) return log(`d${n}-log`, "❌ مش متصل");
+            socket.emit("driver:goOffline");
+            log(`d${n}-log`, "🔴 driver:goOffline");
+
+            // ✅ انتظر رد السيرفر قبل تحديث الـ badge
+            socket.once("driver:goOffline:error", (d) => {
+                log(`d${n}-log`, "❌ goOffline error → " + d.message);
+            });
+        }
+
+        function driverRespond(n, response) {
+            const socket = driverSockets[n];
+            if (!socket?.connected) return log(`d${n}-log`, "❌ مش متصل");
+            const orderId = document.getElementById(`d${n}-orderId`).value.trim();
+            if (!orderId) return log(`d${n}-log`, "❌ أدخل الـ orderId");
+            socket.emit("order:driverResponse", { orderId, response });
+            log(`d${n}-log`, `📤 driverResponse → ${response} : ${orderId}`);
+        }
+
+        function driverDisconnect(n) {
+            driverSockets[n]?.disconnect();
+        }
+
+        function driverStartDelivery(n) {
+            const socket = driverSockets[n];
+            if (!socket?.connected) return log(`d${n}-log`, "❌ مش متصل");
+            const orderId = document.getElementById(`d${n}-orderId`).value.trim();
+            if (!orderId) return log(`d${n}-log`, "❌ أدخل الـ orderId");
+            socket.emit("order:startDelivery", { orderId });
+            log(`d${n}-log`, `📤 order:startDelivery → ${orderId}`);
+        }
+
+        function driverDelivered(n) {
+            const socket = driverSockets[n];
+            if (!socket?.connected) return log(`d${n}-log`, "❌ مش متصل");
+            const orderId = document.getElementById(`d${n}-orderId`).value.trim();
+            if (!orderId) return log(`d${n}-log`, "❌ أدخل الـ orderId");
+            socket.emit("order:delivered", { orderId });
+            log(`d${n}-log`, `📤 order:delivered → ${orderId}`);
+        }
+
+        function userConfirmDelivery(n) {
+            const socket = userSockets[n];
+            if (!socket?.connected) return log(`u${n}-log`, "❌ مش متصل");
+            const orderId = document.getElementById(`u${n}-orderId`).value.trim();
+            if (!orderId) return log(`u${n}-log`, "❌ أدخل الـ orderId");
+            socket.emit("order:confirmDelivery", { orderId });
+            log(`u${n}-log`, `📤 order:confirmDelivery → ${orderId}`);
+        }
+    </script>
+
+</body>
+
+</html>
