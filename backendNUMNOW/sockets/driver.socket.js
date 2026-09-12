@@ -26,6 +26,54 @@ module.exports = (io, driverNS) => {
     const driver = await Driver.findById(driverId).select("availability");
     socket.emit("driver:currentStatus", { availability: driver.availability });
 
+    // v2.0 — B9 (مُعاد تصميمها بعد ردّكم على الرفض، لا علاقة لها بـ
+    // availability إطلاقاً): سائق انقطع سوكيته أثناء جولة بحث نشطة
+    // (لسا ضمن pendingDriverIds ومهلتها لسا سارية) يستلم نفس العرض فور
+    // عودته، بنفس حمولة startSearchRound تماماً، بس بالوقت الفعلي
+    // المتبقي بدل ٣٠ ثانية من جديد. هذا يجعل جرس إيقاظ FCM مفيداً فعلاً
+    // بدل ما يوقظ التطبيق على لا شيء. نتحقق من availability=="online"
+    // الحالية أيضاً حتى ما نرسل عرضاً لسائق قال صراحة إنه أوقف استقباله
+    // بين الانقطاع وإعادة الاتصال.
+    if (driver.availability === "online") {
+      try {
+        const pendingOrders = await Order.find({
+          pendingDriverIds: driverId,
+          driverId: null,
+          driverSearchStatus: "searching",
+          driverSearchExpiresAt: { $gt: new Date() },
+        })
+          .select(
+            "orderNumber restaurantId deliveryAddress totalPrice items deliveryFee originalDeliveryFee driverSearchExpiresAt",
+          )
+          .populate("restaurantId", "name location");
+
+        for (const order of pendingOrders) {
+          const secondsLeft = Math.max(
+            0,
+            Math.round((order.driverSearchExpiresAt - Date.now()) / 1000),
+          );
+          if (secondsLeft <= 0) continue;
+
+          socket.emit("order:driverRequest", {
+            orderId: order._id,
+            orderNumber: order.orderNumber,
+            restaurantName: order.restaurantId?.name,
+            restaurantLocation: order.restaurantId?.location,
+            deliveryAddress: order.deliveryAddress,
+            totalPrice: order.totalPrice,
+            items: order.items,
+            // نفس مفتاح startSearchRound (timeoutSeconds) — الوقت الفعلي
+            // المتبقي، لا ٣٠ من جديد، فيعمل عدّاد التطبيق الموجود أصلاً
+            // بلا أي تعديل عندكم
+            timeoutSeconds: secondsLeft,
+            driverEarning: driverEarningOf(order),
+          });
+        }
+      } catch (err) {
+        console.error("resend pending orders on reconnect failed:", err);
+      }
+    }
+
     socket.on("driver:goOnline", async () => {
       try {
         const activeOrder = await Order.findOne({
