@@ -1965,6 +1965,60 @@ exports.addToCart = async (req, res) => {
     res.status(500).json({ message: m.general.serverError });
   }
 };
+// v4.1 — تنفيذ فعلي لدالة كانت مُشار إليها بـ user_routes.js (PATCH /cart)
+// بس غير موجودة أبداً بالكونترولر، وهيك كانت بتسبب كراش عند الإقلاع
+// (argument handler must be a function). تعدّل كمية عنصر موجود بالسلة
+// بمكانه، بدل ما يضطر المستخدم يحذف العنصر ويضيفه من جديد.
+exports.updateCartItemQuantity = async (req, res) => {
+  const m = getMessages(req).user;
+  try {
+    const userId = req.user._id ?? req.user.id;
+    const { itemId, quantity } = req.body;
+
+    if (!quantity || quantity < 1 || !Number.isInteger(Number(quantity))) {
+      return res.status(400).json({ message: m.cart.invalidQuantity });
+    }
+
+    const cart = await Cart.findOne({ userId });
+    if (!cart) {
+      return res.status(404).json({ message: m.cart.cartNotFound });
+    }
+
+    const item = cart.items.id(itemId);
+    if (!item) {
+      return res.status(404).json({ message: m.cart.itemNotFound });
+    }
+
+    // سعر الوحدة الحالي (بعد أي خصم عرض مطبّق) + الإضافات — نعيد حسابه
+    // من basePrice المخزّن بدل القسمة على الكمية القديمة، لتفادي أي
+    // انحراف تراكمي بالأرقام العشرية.
+    const extrasTotal = (item.extras || []).reduce(
+      (sum, e) => sum + e.price,
+      0,
+    );
+    const unitPrice = item.basePrice + extrasTotal;
+
+    item.quantity = quantity;
+    item.totalItemPrice = Number((unitPrice * quantity).toFixed(2));
+
+    // إعادة حساب مجموع السلة كاملاً بعد التعديل
+    cart.totalCartPrice = cart.items.reduce(
+      (sum, i) => sum + i.totalItemPrice,
+      0,
+    );
+
+    await cart.save();
+
+    res.status(200).json({
+      success: true,
+      message: m.cart.quantityUpdated,
+      cart,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: m.general.serverError });
+  }
+};
 exports.removeFoodFromCart = async (req, res) => {
   const m = getMessages(req).user;
   try {
