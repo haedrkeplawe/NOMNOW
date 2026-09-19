@@ -38,8 +38,18 @@ const ORDER_STATUS_TEMPLATES = {
     title: "تم توصيل طلبك 🎉",
     body: `تم تسليم طلبك رقم ${order.orderNumber} بنجاح، بالهنا والشفا`,
   }),
-  cancelled: (order) => {
+  // v4.3 — options.reason: "no_driver" لما المطعم بيلغي لأنو ما انلقى سائق
+  // (بدل ما الزبون يفكّر إنو المطعم هو السبب)، أي قيمة تانية = رسالة المطعم
+  cancelled: (order, options = {}) => {
     const refunded = order.paymentStatus === "refunded";
+    if (options.reason === "no_driver") {
+      return {
+        title: "تم إلغاء طلبك ❌",
+        body: refunded
+          ? `نأسف، تعذّر إيجاد سائق لتوصيل طلبك رقم ${order.orderNumber} وتم استرجاع المبلغ المدفوع`
+          : `نأسف، تعذّر إيجاد سائق لتوصيل طلبك رقم ${order.orderNumber}`,
+      };
+    }
     return {
       title: "تم إلغاء طلبك ❌",
       body: refunded
@@ -55,12 +65,13 @@ const ORDER_STATUS_TEMPLATES = {
  * @param {string} userId
  * @param {"accepted"|"ready"|"picked_up"|"on_the_way"|"delivered"|"cancelled"} statusKey
  * @param {Object} order - لازم يحتوي على الأقل orderNumber و _id
+ * @param {{reason?: string}} [options] - v4.3: سبب إضافي (حالياً "no_driver" للإلغاء)
  */
-const notifyUserOrderStatus = async (userId, statusKey, order) => {
+const notifyUserOrderStatus = async (userId, statusKey, order, options = {}) => {
   const template = ORDER_STATUS_TEMPLATES[statusKey];
   if (!template || !userId) return;
 
-  const { title, body } = template(order);
+  const { title, body } = template(order, options);
 
   await dispatchNotification({
     recipientType: "user",
@@ -76,6 +87,8 @@ const notifyUserOrderStatus = async (userId, statusKey, order) => {
       status: statusKey,
       orderId: order._id.toString(),
       orderNumber: order.orderNumber,
+      // v4.3 — حقل إضافي بس لما يكون في سبب (الفلاتر يتجاهله لو ما بيحتاجه)
+      ...(options.reason ? { reason: options.reason } : {}),
     },
   });
 };
