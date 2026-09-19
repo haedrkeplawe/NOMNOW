@@ -78,18 +78,28 @@ const OrderCard = ({ order }) => {
   const [updateError, setUpdateError] = useState(null);
   const timeoutRef = useRef(null);
   const status = STATUS_STYLES[order.orderStatus] || {};
-  const { socket, driverAlerts, currency, emitOrQueue, isConnected } =
-    useRestaurant();
+  const {
+    socket,
+    driverAlerts,
+    currency,
+    emitOrQueue,
+    isConnected,
+    orderError,
+  } = useRestaurant();
   const { t } = useTranslation();
   const [pendingSince, setPendingSince] = useState(null);
 
+  // v4.3 — تنبيهات البحث عن سائق بتنعرض بس والطلب لسا "accepted"؛ بعد
+  // الإلغاء (أو استلام سائق) ما لازم يضل يظهر "ابحث من جديد" على الكارد
   const driverAlert =
-    driverAlerts[order._id?.toString()] ||
-    (order.driverSearchStatus === "searching"
-      ? "searching"
-      : order.driverSearchStatus === "failed"
-      ? "noDriver"
-      : null);
+    order.orderStatus !== "accepted"
+      ? null
+      : driverAlerts[order._id?.toString()] ||
+        (order.driverSearchStatus === "searching"
+          ? "searching"
+          : order.driverSearchStatus === "failed"
+          ? "noDriver"
+          : null);
 
   const formatDateTime = (date) =>
     new Date(date).toLocaleString("en-US", {
@@ -133,6 +143,25 @@ const OrderCard = ({ order }) => {
     setUpdateError(null);
     setPendingSince(null);
   }, [order.orderStatus]);
+
+  // v4.3 — لو السيرفر رفض أمر (order:error) وهالكارد كان ينتظر ردّه: نوقف
+  // التحميل ونعرض الرسالة الحقيقية بدل ما نستنى الـ timeout أو يضل
+  // badge "pending sync" عالق
+  useEffect(() => {
+    if (!orderError) return;
+    if (orderError.orderId && orderError.orderId !== order._id?.toString())
+      return;
+    if (!loading && !pendingSince) return;
+
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setLoading(false);
+    setPendingSince(null);
+    setUpdateError(orderError.message);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orderError]);
 
   // تنظيف عند الـ unmount لمنع memory leak
   useEffect(() => {
@@ -354,6 +383,7 @@ const OrderCard = ({ order }) => {
             >
               {loading ? "..." : t("orders.cancelOrder")}
             </button>
+            {updateError && <p className="order-update-error">{updateError}</p>}
           </div>
         ) : order.orderStatus === "pending" ? (
           <p>{t("orders.driverAutoAssigned")}</p>
