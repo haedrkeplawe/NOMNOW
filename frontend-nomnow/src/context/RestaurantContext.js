@@ -22,6 +22,8 @@ export const RestaurantProvider = ({ children }) => {
   const [socketInstance, setSocketInstance] = useState(null);
   const [driverAlerts, setDriverAlerts] = useState({});
   const [isConnected, setIsConnected] = useState(false);
+  // v4.3 — آخر خطأ رجّعه السيرفر لأمر على طلب ({ orderId, message, ts })
+  const [orderError, setOrderError] = useState(null);
   const pendingQueue = useRef([]);
 
   useEffect(() => {
@@ -160,6 +162,24 @@ export const RestaurantProvider = ({ children }) => {
           o._id.toString() === order._id.toString() ? order : o,
         ),
       );
+      // v4.3 — الطلب الملغي ما لازم يضل إله تنبيه بحث عن سائق
+      if (order.orderStatus === "cancelled") {
+        setDriverAlerts((prev) => {
+          const updated = { ...prev };
+          delete updated[order._id.toString()];
+          return updated;
+        });
+      }
+    });
+
+    // v4.3 — كان السيرفر يرسل order:error والواجهة ما بتسمعه أبداً، فأي
+    // رفض (طلب انلغى، حالة مو مسموحة...) كان يبين "Update timed out"
+    socket.on("order:error", (data) => {
+      setOrderError({
+        orderId: data?.orderId ? data.orderId.toString() : null,
+        message: data?.message || "Request failed",
+        ts: Date.now(),
+      });
     });
 
     socket.on("order:searchingDriver", (data) => {
@@ -207,6 +227,7 @@ export const RestaurantProvider = ({ children }) => {
       socket.io.off("reconnect");
       socket.off("order:new");
       socket.off("order:updated");
+      socket.off("order:error");
       socket.off("order:searchingDriver");
       socket.off("order:noDriverFound");
       socket.off("order:driverAssigned");
@@ -240,6 +261,7 @@ export const RestaurantProvider = ({ children }) => {
         syncOrders,
         isConnected,
         emitOrQueue,
+        orderError,
       }}
     >
       {children}
