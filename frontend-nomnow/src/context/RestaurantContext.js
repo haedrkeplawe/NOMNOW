@@ -160,6 +160,20 @@ export const RestaurantProvider = ({ children }) => {
           o._id.toString() === order._id.toString() ? order : o,
         ),
       );
+
+      // v4.3.1 — لو الطلب صار "cancelled"، لازم نصفّر أي تنبيه بحث سائق
+      // محلي (driverAlerts) كان عالق من جولة سابقة ("searching" أو
+      // "noDriver") — وإلا بيضل ظاهر بالواجهة حتى لو driverSearchStatus
+      // بالباك اند تصححت، لأن driverAlerts المحلي إله الأولوية بالعرض
+      // (راجع OrderCard.jsx). هاد بالضبط سبب ظهور بانر "لا يوجد سائق"
+      // على طلب ملغي فعلياً.
+      if (order.orderStatus === "cancelled") {
+        setDriverAlerts((prev) => {
+          const updated = { ...prev };
+          delete updated[order._id.toString()];
+          return updated;
+        });
+      }
     });
 
     socket.on("order:searchingDriver", (data) => {
@@ -198,6 +212,15 @@ export const RestaurantProvider = ({ children }) => {
       setNewOrders((prev) =>
         prev.filter((o) => o._id.toString() !== orderId.toString()),
       );
+
+      // v4.3.1 — نفس تصفير driverAlerts أعلاه، دفاعياً هون كمان (عمليًا
+      // هالحدث بينطلق بس للطلبات اللي لسا ما بلّشت بحث سائق أصلاً، لكن
+      // ما في ضرر من التصفير الآمن)
+      setDriverAlerts((prev) => {
+        const updated = { ...prev };
+        delete updated[orderId.toString()];
+        return updated;
+      });
     });
 
     return () => {
