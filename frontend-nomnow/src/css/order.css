@@ -408,12 +408,27 @@
 }
 .orders-page .driver-alert {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  border-radius: 8px;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
   margin-bottom: 12px;
   font-size: 14px;
+}
+.orders-page .driver-alert-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.orders-page .driver-alert-message p {
+  font-weight: 500;
+}
+.orders-page .driver-alert-actions {
+  display: flex;
+  gap: 10px;
+}
+.orders-page .driver-alert-actions button {
+  flex: 1;
 }
 .orders-page .driver-alert.searching {
   background: #eff6ff;
@@ -426,18 +441,49 @@
   border: 1px solid #fecaca;
 }
 .orders-page .search-again-btn {
-  margin-top: 8px;
-  padding: 8px 16px;
-  border-radius: 6px;
+  padding: 10px;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
   font-size: 13px;
-  background: var(--primary-orange);
+  font-weight: 500;
+  transition: 0.2s;
+  background: #eff6ff;
+  color: #1447e6;
+  border: 1px solid #bfdbfe;
+}
+.orders-page .search-again-btn:hover {
+  background: #1447e6;
   color: white;
 }
-
-.orders-page .search-again-btn:hover {
-  background: #0f3bbf;
+.orders-page .search-again-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+/* v4.3.2 — زر إلغاء داخل بانر البحث/عدم توفر سائق: نفس هوية
+   action-btn.reject تمامًا (خلفية فاتحة + حدود حمراء، تعبئة صلبة عالـ
+   hover) بدل ما يضل بلا أي تنسيق — كان مربوط قبل بصنف action-btn.reject
+   يلي شرطه بالـ CSS يتطلب أب باسم order-card-actions، وهالزر مش جواها
+   فعليًا فما كان يطبّق عليه أي شكل إطلاقًا */
+.orders-page .cancel-order-btn {
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: 0.2s;
+  background: #fef2f2;
+  color: #e7000b;
+  border: 1px solid #fecaca;
+}
+.orders-page .cancel-order-btn:hover {
+  background: #e7000b;
+  color: white;
+}
+.orders-page .cancel-order-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .orders-page .order-item-img {

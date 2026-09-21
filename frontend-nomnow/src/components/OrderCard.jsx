@@ -321,39 +321,62 @@ const OrderCard = ({ order }) => {
           </>
         ) : driverAlert === "searching" ? (
           <div className="driver-alert searching">
-            <p>🔍 {t("orders.searchingDriver")}</p>
-            <button
-              className="search-again-btn"
-              onClick={() => {
-                socket.emit("order:searchDriverAgain", { orderId: order._id });
-                setLoading(true);
-                setTimeout(() => setLoading(false), 2000);
-              }}
-              disabled={loading}
-            >
-              {loading
-                ? `⏳ ${t("orders.restarting")}`
-                : `🔄 ${t("orders.restartSearch")}`}
-            </button>
+            <div className="driver-alert-message">
+              🔍 <p>{t("orders.searchingDriver")}</p>
+            </div>
+            <div className="driver-alert-actions">
+              <button
+                className="search-again-btn"
+                onClick={() => {
+                  socket.emit("order:searchDriverAgain", {
+                    orderId: order._id,
+                  });
+                  setLoading(true);
+                  setTimeout(() => setLoading(false), 2000);
+                }}
+                disabled={loading}
+              >
+                {loading
+                  ? `⏳ ${t("orders.restarting")}`
+                  : `🔄 ${t("orders.restartSearch")}`}
+              </button>
+              {/* v4.3.2 — زر إلغاء أثناء البحث النشط: كان غايب من هالحالة
+                  تحديدًا رغم إنو الباك اند مصمم أصلاً يدعمها بالكامل
+                  (order:updateStatus مسموحة من حالة accepted، وstopActiveSearch
+                  بتوقف جولة البحث وتبلّغ السواق المنتظرين فورًا) */}
+              <button
+                className="cancel-order-btn"
+                onClick={() => handleUpdateStatus("cancelled")}
+                disabled={loading}
+              >
+                {loading ? "..." : t("orders.cancelOrder")}
+              </button>
+            </div>
           </div>
         ) : driverAlert === "noDriver" ? (
           <div className="driver-alert noDriver">
-            <p>❌ {t("orders.noDriverFound")}</p>
-            <button
-              className="search-again-btn"
-              onClick={() =>
-                socket.emit("order:searchDriverAgain", { orderId: order._id })
-              }
-            >
-              🔄 {t("orders.searchAgain")}
-            </button>
-            <button
-              className="action-btn reject"
-              onClick={() => handleUpdateStatus("cancelled")}
-              disabled={loading}
-            >
-              {loading ? "..." : t("orders.cancelOrder")}
-            </button>
+            <div className="driver-alert-message">
+              ❌ <p>{t("orders.noDriverFound")}</p>
+            </div>
+            <div className="driver-alert-actions">
+              <button
+                className="search-again-btn"
+                onClick={() =>
+                  socket.emit("order:searchDriverAgain", {
+                    orderId: order._id,
+                  })
+                }
+              >
+                🔄 {t("orders.searchAgain")}
+              </button>
+              <button
+                className="cancel-order-btn"
+                onClick={() => handleUpdateStatus("cancelled")}
+                disabled={loading}
+              >
+                {loading ? "..." : t("orders.cancelOrder")}
+              </button>
+            </div>
           </div>
         ) : order.orderStatus === "pending" ? (
           <p>{t("orders.driverAutoAssigned")}</p>
