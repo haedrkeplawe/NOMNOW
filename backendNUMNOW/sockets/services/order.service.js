@@ -30,29 +30,47 @@ const cancelActiveSearch = (orderId) => {
   }
 };
 
-// v4.3 — دالة موحّدة لإيقاف بحث نشط عن سائق فور إلغاء/رفض الطلب. تُستدعى
+// v4.3 — دالة موحّدة لإيقاف/تصفير بحث سائق فور إلغاء/رفض الطلب. تُستدعى
 // من مكانين: (1) مباشرة من restaurant.socket.js لحظة ما المطعم يلغي
 // الطلب، و(2) دفاعياً من داخل startSearchRound نفسها تحت — كشبكة أمان
 // لأي مسار تاني ممكن يخرج الطلب من حالة "accepted" بدون ما يمر من هون
-// مباشرة. بتعمل 3 أشياء بعملية واحدة:
+// مباشرة.
+//
+// v4.3.1 — وسّعنا الشرط ليغطي "failed" مش بس "searching": اكتشفنا
+// بالاختبار الحي إنو أشيع سيناريو فعلي هو إنو البحث يفشل (3 محاولات)
+// ثم المطعم يضغط زر "Cancel Order" الموجود أصلاً جوا بانر "لا يوجد سائق"
+// بلوحة المطعم (OrderCard.jsx) — وهاد بالضبط سيناريو driverSearchStatus:
+// "failed" وقت الإلغاء، مش "searching". لو ما غطيناه، الطلب بيصير
+// "cancelled" لكن driverSearchStatus بتضل "failed" للأبد، وبانر "لا يوجد
+// سائق" بيضل ظاهر بلوحة المطعم على طلب ملغي فعلياً (لأن OrderCard.jsx
+// بيعتمد على driverSearchStatus === "failed" لعرض هالبانر — راجع أيضاً
+// ملاحظة مهمة بـ RestaurantContext.js: state محلي منفصل اسمه driverAlerts
+// كان لازم ينصفّر بالتوازي، وإلا البانر بيضل ظاهر حتى لو driverSearchStatus
+// تصححت بالباك اند لأن driverAlerts إلها أولوية بالعرض).
+//
+// بتعمل 3 أشياء بعملية واحدة:
 //   1) تلغي المؤقت المحلي فوراً بدل ما تستناه ينتهي لحاله (لحد 30 ثانية)
+//      — بينطبق فقط على حالة "searching"، أما "failed" فما في مؤقت شغال
+//      أصلاً (البحث خلص محاولاته من قبل)
 //   2) تصفّر driverSearchStatus لقيمة "cancelled" المخصصة (تختلف عن
-//      "failed" التي تعني "دورنا على سواق ولم نجد أحداً") وتفضّي
-//      pendingDriverIds لأنه لم يعد أحد ينتظر رد بشأنها. notifiedDriverIds
-//      تبقى كما هي عمداً — سجل تاريخي لمن عُرض عليهم الطلب، قد يفيد
-//      لاحقاً بأي تحليل لتكرار رفض سائق معيّن (نقطة مستقبلية منفصلة)
-//   3) تبلّغ فوراً كل سائق كان لسا ينتظر منه رد بهذه الجولة تحديداً
-//      (نفس من كان جوا pendingDriverIds قبل التصفير) بحدث جديد
-//      order:driverRequest:cancelled، حتى يختفي العرض من شاشته فوراً
-//      بدل ما ينتظر انتهاء الوقت أو ياخد لاحقاً رسالة "أخذه سائق آخر"
-//      غير الدقيقة لو حاول يرد
+//      "failed" التي تعني تحديداً "دورنا على سواق ولم نجد أحداً، لسا ما
+//      انلغى الطلب") وتفضّي pendingDriverIds لأنه لم يعد أحد ينتظر رد
+//      بشأنها. notifiedDriverIds تبقى كما هي عمداً — سجل تاريخي لمن عُرض
+//      عليهم الطلب، قد يفيد لاحقاً بأي تحليل لتكرار رفض سائق معيّن (نقطة
+//      مستقبلية منفصلة)
+//   3) تبلّغ فوراً كل سائق كان لسا ينتظر منه رد بهذه الجولة تحديداً (لو
+//      كانت الحالة "searching" وفيه سواق pending فعلاً — بحالة "failed"
+//      هاي القائمة أصلاً فاضية من قبل، فما في أحد يُبلّغ، وهذا صحيح
+//      ومتوقع) بحدث جديد order:driverRequest:cancelled، حتى يختفي العرض
+//      من شاشته فوراً بدل ما ينتظر انتهاء الوقت أو ياخد لاحقاً رسالة
+//      "أخذه سائق آخر" غير الدقيقة لو حاول يرد
 const stopActiveSearch = async (io, orderId) => {
   cancelActiveSearch(orderId);
 
   // findOneAndUpdate بترجع افتراضياً الوثيقة *قبل* التعديل، فهيك منعرف
   // بالضبط مين كان جوا pendingDriverIds قبل ما نفضيها تحت
   const previous = await Order.findOneAndUpdate(
-    { _id: orderId, driverSearchStatus: "searching" },
+    { _id: orderId, driverSearchStatus: { $in: ["searching", "failed"] } },
     {
       $set: {
         driverSearchStatus: "cancelled",
@@ -62,7 +80,7 @@ const stopActiveSearch = async (io, orderId) => {
     },
   ).select("pendingDriverIds");
 
-  // ما كان في بحث نشط فعلياً وقت الاستدعاء (كانت مثلاً "failed" أو
+  // ما كان في بحث نشط ولا فاشل معلّق فعلياً وقت الاستدعاء (كانت مثلاً
   // "assigned" أو null أصلاً) — ما في داعي لأي إشعار
   if (!previous) return;
 
@@ -89,18 +107,16 @@ const startSearchRound = async (io, orderId) => {
   // driverEarning تحت (راجع BACKEND_TASK_driver_offer_data.md قسم 3.2 —
   // بدونهم driverEarning كانت ترجع undefined حتى لو أضفناها للحمولة)
   const current = await Order.findById(orderId).select(
-    "driverId orderStatus restaurantId driverSearchAttempt notifiedDriverIds orderNumber totalPrice items deliveryAddress deliveryFee originalDeliveryFee driverSearchStatus",
+    "driverId orderStatus restaurantId driverSearchAttempt notifiedDriverIds orderNumber totalPrice items deliveryAddress deliveryFee originalDeliveryFee",
   );
 
   // الطلب اتلغى، أو حدا ثاني أخذه، أو حالته تغيّرت — ما في داعي نكمل
   if (!current || current.driverId || current.orderStatus !== "accepted") {
-    // v4.3 — شبكة أمان: لو طلعنا من هون بسبب إن الطلب لم يعد "accepted"
-    // (انلغى غالباً) وكان driverSearchStatus لسا معلّم "searching"، ننظفه
-    // هون كمان — حتى لو صار الخروج من "accepted" من مسار ما فكرنا فيه
-    // أصلاً حالياً أو مستقبلاً (راجع stopActiveSearch فوق للتفاصيل)
-    if (current && current.driverSearchStatus === "searching") {
-      await stopActiveSearch(io, orderId);
-    }
+    // v4.3.1 — شبكة أمان: أياً كان السبب يلي خرّج الطلب من "accepted"
+    // (انلغى غالباً)، ننظف أي أثر بحث سائق لسا عالق ("searching" أو
+    // "failed") بنداء واحد آمن — stopActiveSearch بترجع فوراً بصمت لو
+    // ما في شي أصلاً يحتاج تنظيف (راجع تعليقها فوق لتفاصيل أكتر)
+    await stopActiveSearch(io, orderId);
     return;
   }
 

@@ -1,199 +1,271 @@
-const Order = require("../models/Order");
-const Driver = require("../models/Driver");
-const { getSocketMessages } = require("../utils/messages");
-const Stripe = require("stripe");
-const { HttpsProxyAgent } = require("https-proxy-agent");
-const stripeAgent = process.env.HTTP_PROXY
-  ? new HttpsProxyAgent(process.env.HTTP_PROXY)
-  : undefined;
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  httpAgent: stripeAgent,
-});
-const {
-  startSearchRound,
-  cancelActiveSearch,
-  stopActiveSearch,
-} = require("./services/order.service");
-// v3.5
-const { notifyUserOrderStatus } = require("./services/notification.service");
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+} from "react";
+import { useAuth } from "./AuthContext";
+import { createRestaurantSocket } from "../socket/restaurantSocket";
 
-module.exports = (io, restaurantNS) => {
-  restaurantNS.on("connection", (socket) => {
-    const restaurantId = socket.userId;
-    const m = getSocketMessages(socket).socket.restaurant;
+const RestaurantContext = createContext();
+export const useRestaurant = () => useContext(RestaurantContext);
 
-    socket.join(restaurantId.toString());
-    socket.emit("connected", { ok: true });
+export const RestaurantProvider = ({ children }) => {
+  const { api, accessToken, refreshAccessToken } = useAuth();
+  const [restaurant, setRestaurant] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [newOrders, setNewOrders] = useState([]);
+  const socketRef = useRef(null);
+  const [orders, setOrders] = useState([]);
+  const [socketInstance, setSocketInstance] = useState(null);
+  const [driverAlerts, setDriverAlerts] = useState({});
+  const [isConnected, setIsConnected] = useState(false);
+  const pendingQueue = useRef([]);
 
-    socket.on("order:updateStatus", async (data) => {
+  useEffect(() => {
+    if (!accessToken) return;
+    const fetchRestaurant = async () => {
       try {
-        const { orderId, status } = data;
+        const res = await api.get("/restaurant/setting/restorant-info");
+        setRestaurant(res.data.restaurant);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchRestaurant();
+  }, [accessToken]);
 
-        if (!orderId) {
-          return socket.emit("order:error", { message: m.orderIdRequired });
+  const syncOrders = useCallback(async () => {
+    try {
+      const res = await api.get("/restaurant/orders");
+      const fetched = res.data.orders || [];
+      setOrders((prev) => {
+        const existingMap = new Map(prev.map((o) => [o._id.toString(), o]));
+        fetched.forEach((o) => existingMap.set(o._id.toString(), o));
+        return Array.from(existingMap.values()).sort(
+          (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+        );
+      });
+      setNewOrders((prevNew) => {
+        const existingNewIds = new Set(prevNew.map((o) => o._id.toString()));
+        const missedNew = fetched.filter(
+          (o) =>
+            o.orderStatus === "pending" &&
+            !existingNewIds.has(o._id.toString()),
+        );
+        return missedNew.length > 0 ? [...missedNew, ...prevNew] : prevNew;
+      });
+    } catch (err) {
+      console.error("syncOrders error:", err);
+    }
+  }, [api]);
+
+  // ✅ تشغيل صوت التنبيه عند الأوردر الجديد
+  const playOrderSound = useCallback(() => {
+    try {
+      const soundEnabled = localStorage.getItem("nomnow_sound") !== "false";
+      if (!soundEnabled) return;
+      const audio = new Audio("/sounds/order.mp3");
+      audio.volume = 0.8;
+      audio.playbackRate = 0.6;
+      audio.play();
+    } catch (err) {
+      console.log("Sound error:", err);
+    }
+  }, []);
+
+  const flushQueue = useCallback((socket) => {
+    if (!pendingQueue.current.length) return;
+    console.log(
+      "Flushing " + pendingQueue.current.length + " pending action(s)...",
+    );
+    pendingQueue.current.forEach(({ event, data }) => {
+      socket.emit(event, data);
+    });
+    pendingQueue.current = [];
+  }, []);
+
+  const emitOrQueue = useCallback((event, data) => {
+    const socket = socketRef.current;
+    if (socket?.connected) {
+      socket.emit(event, data);
+    } else {
+      console.log("Offline — queued: " + event, data);
+      pendingQueue.current.push({ event, data });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!accessToken) return;
+
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+      socketRef.current = null;
+    }
+
+    const socket = createRestaurantSocket(accessToken);
+    socketRef.current = socket;
+
+    socket.removeAllListeners();
+    socket.connect();
+    setSocketInstance(socket);
+
+    socket.on("connect", () => setIsConnected(true));
+    socket.on("disconnect", () => setIsConnected(false));
+    socket.on("connect_error", async (err) => {
+      setIsConnected(false);
+      console.error("Socket connection error:", err.message);
+
+      // لو 401 → نجرب refresh ونعيد الاتصال بالـ token الجديد
+      if (
+        err.message?.includes("401") ||
+        err.data?.message?.includes("401") ||
+        err.message?.includes("jwt") ||
+        err.message?.includes("unauthorized")
+      ) {
+        try {
+          const newToken = await refreshAccessToken();
+          socket.auth = { token: newToken };
+          socket.connect();
+        } catch (refreshErr) {
+          console.error("Token refresh failed — logging out");
         }
-
-        const allowedStatuses = ["accepted", "preparing", "ready", "cancelled"];
-        if (!allowedStatuses.includes(status)) {
-          return socket.emit("order:error", { message: m.invalidStatus });
-        }
-
-        const order = await Order.findOne({
-          _id: orderId,
-          restaurantId,
-        }).populate("userId", "name phone");
-
-        if (!order) {
-          return socket.emit("order:error", { message: m.orderNotFound });
-        }
-
-        const lockedStatuses = [
-          "cancelled",
-          "delivered",
-          "picked_up",
-          "on_the_way",
-        ];
-        if (lockedStatuses.includes(order.orderStatus)) {
-          return socket.emit("order:error", {
-            message: m.cannotChangeStatus.replace(
-              "{{status}}",
-              order.orderStatus,
-            ),
-          });
-        }
-
-        order.orderStatus = status;
-
-        // v4.1 — إصلاح ثغرة بآلية الاستعادة (نقطة 8): لو السيرفر وقع
-        // بالضبط بين لحظة "المطعم قبل" ولحظة "أول جولة بحث كملت"، الطلب
-        // كان رح يضل عالق (orderStatus: accepted لكن driverSearchStatus
-        // لسا null — يعني sweep الاستعادة ما رح يلقطه لأنه بيدوّر بس على
-        // "searching"). هلق منعلّم الطلب "searching" مع وقت انتهاء بالماضي
-        // (فورًا) بنفس لحظة القبول، قبل ما نحاول حتى أول جولة — هيك لو
-        // صار Crash بأي لحظة بعد هالسطر، الـ sweep رح يلقط الطلب ويكمل
-        // البحث من الصفر تلقائيًا (driverSearchAttempt لسا 0)
-        if (status === "accepted") {
-          order.driverSearchStatus = "searching";
-          order.driverSearchExpiresAt = new Date();
-        }
-
-        // إذا المطعم رفض وكان مدفوعاً → Refund تلقائي
-        if (
-          status === "cancelled" &&
-          order.paymentDetails?.paymentIntentId &&
-          order.paymentStatus === "paid"
-        ) {
-          try {
-            await stripe.refunds.create({
-              payment_intent: order.paymentDetails.paymentIntentId,
-            });
-            order.paymentStatus = "refunded";
-          } catch (refundErr) {
-            console.error("Refund failed:", refundErr.message);
-          }
-        }
-
-        await order.save();
-
-        // v4.3 — لو كان في بحث نشط عن سائق شغال وقت الإلغاء
-        // (driverSearchStatus == "searching")، نوقفه فوراً بدل ما نتركه
-        // معلّقاً لحد ما ينتهي تلقائياً (لحد 30 ثانية) — راجع
-        // stopActiveSearch بـ order.service.js لتفاصيل ما تعمله بالضبط
-        if (status === "cancelled") {
-          await stopActiveSearch(io, order._id);
-        }
-
-        const populatedOrder = await Order.findById(order._id)
-          .populate("userId", "name phone")
-          .populate("driverId", "name phone vehicletype vehicleplate rating");
-
-        socket.emit("order:updated", { order: populatedOrder });
-
-        io.of("/user")
-          .to(order.userId._id.toString())
-          .emit("order:statusUpdated", {
-            orderId: order._id,
-            orderNumber: order.orderNumber,
-            status: order.orderStatus,
-          });
-
-        // v3.5
-        // Push notification للمستخدم — لا توقف تدفق العملية إذا فشلت
-        if (["accepted", "ready", "cancelled"].includes(status)) {
-          notifyUserOrderStatus(order.userId._id, status, order);
-        }
-
-        if (status === "accepted") {
-          socket.emit("order:searchingDriver", {
-            orderId: order._id,
-            orderNumber: order.orderNumber,
-            message: m.searchingDriver,
-          });
-
-          // v4.1 — startSearchRound بتاخد orderId بس وبتجيب كل شي (المطعم،
-          // الموقع، رقم المحاولة) طازة من الداتابيز بنفسها — هيك ما في
-          // مجال لتمرير باراميتر غلط بمكانه (كانت هاي المشكلة سابقًا)
-          await startSearchRound(io, order._id);
-        }
-
-        console.log(`Order ${order.orderNumber} → ${status}`);
-      } catch (error) {
-        console.error("order:updateStatus error:", error);
-        socket.emit("order:error", { message: error.message });
       }
     });
 
-    socket.on("order:searchDriverAgain", async (data) => {
-      try {
-        const { orderId } = data;
+    socket.io.on("reconnect", (attemptNumber) => {
+      console.log("Socket reconnected after " + attemptNumber + " attempt(s)");
+      setIsConnected(true);
+      syncOrders();
+      flushQueue(socket);
+    });
 
-        if (!orderId) {
-          return socket.emit("order:error", { message: m.orderIdRequired });
-        }
+    socket.on("order:new", ({ order }) => {
+      playOrderSound();
+      setNewOrders((prev) => [order, ...prev]);
+      setOrders((prev) => {
+        if (prev.some((o) => o._id.toString() === order._id.toString()))
+          return prev;
+        return [order, ...prev];
+      });
+    });
 
-        const order = await Order.findOne({ _id: orderId, restaurantId });
+    socket.on("order:updated", ({ order }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id.toString() === order._id.toString() ? order : o,
+        ),
+      );
 
-        if (!order) {
-          return socket.emit("order:error", { message: m.orderNotFound });
-        }
-
-        // v4.3 — حماية إضافية عند المصدر: حتى لو driverSearchStatus كانت
-        // (بالخطأ أو بمسار لم نتوقعه) "searching"/"failed" على طلب لم
-        // يعد "accepted" (اتلغى مثلاً)، ما نسمح بإعادة تفعيل بحث عليه
-        if (order.orderStatus !== "accepted") {
-          return socket.emit("order:error", { message: m.notSearchable });
-        }
-
-        if (!["failed", "searching"].includes(order.driverSearchStatus)) {
-          return socket.emit("order:error", { message: m.notSearchable });
-        }
-
-        // v4.1 — "أعد البحث" يدويًا = بحث جديد بالكامل من الصفر: نصفّر
-        // رقم المحاولة وقائمة السواق المستبعدين، حتى لو كانت المحاولات
-        // الثلاث خلصت سابقًا (وإلا startSearchRound رح ترفض فورًا)
-        cancelActiveSearch(orderId);
-        await Order.findByIdAndUpdate(orderId, {
-          driverSearchStatus: "searching",
-          driverSearchAttempt: 0,
-          notifiedDriverIds: [],
-          pendingDriverIds: [],
+      // v4.3.1 — لو الطلب صار "cancelled"، لازم نصفّر أي تنبيه بحث سائق
+      // محلي (driverAlerts) كان عالق من جولة سابقة ("searching" أو
+      // "noDriver") — وإلا بيضل ظاهر بالواجهة حتى لو driverSearchStatus
+      // بالباك اند تصححت، لأن driverAlerts المحلي إله الأولوية بالعرض
+      // (راجع OrderCard.jsx). هاد بالضبط سبب ظهور بانر "لا يوجد سائق"
+      // على طلب ملغي فعلياً.
+      if (order.orderStatus === "cancelled") {
+        setDriverAlerts((prev) => {
+          const updated = { ...prev };
+          delete updated[order._id.toString()];
+          return updated;
         });
-
-        socket.emit("order:searchingDriver", {
-          orderId: order._id,
-          orderNumber: order.orderNumber,
-          message: m.searchingDriver,
-        });
-
-        await startSearchRound(io, orderId);
-      } catch (error) {
-        console.error("order:searchDriverAgain error:", error);
-        socket.emit("order:error", { message: error.message });
       }
     });
 
-    socket.on("disconnect", () => {
-      console.log("Restaurant disconnected:", restaurantId);
+    socket.on("order:searchingDriver", (data) => {
+      setDriverAlerts((prev) => ({
+        ...prev,
+        [data.orderId.toString()]: "searching",
+      }));
     });
-  });
+
+    socket.on("order:noDriverFound", (data) => {
+      setDriverAlerts((prev) => ({
+        ...prev,
+        [data.orderId.toString()]: "noDriver",
+      }));
+    });
+
+    socket.on("order:driverAssigned", ({ orderId, order }) => {
+      setOrders((prev) =>
+        prev.map((o) => (o._id.toString() === orderId.toString() ? order : o)),
+      );
+      setDriverAlerts((prev) => {
+        const updated = { ...prev };
+        delete updated[orderId.toString()];
+        return updated;
+      });
+    });
+
+    socket.on("order:cancelled", ({ orderId, order }) => {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o._id.toString() === orderId.toString()
+            ? order || { ...o, orderStatus: "cancelled" }
+            : o,
+        ),
+      );
+      setNewOrders((prev) =>
+        prev.filter((o) => o._id.toString() !== orderId.toString()),
+      );
+
+      // v4.3.1 — نفس تصفير driverAlerts أعلاه، دفاعياً هون كمان (عمليًا
+      // هالحدث بينطلق بس للطلبات اللي لسا ما بلّشت بحث سائق أصلاً، لكن
+      // ما في ضرر من التصفير الآمن)
+      setDriverAlerts((prev) => {
+        const updated = { ...prev };
+        delete updated[orderId.toString()];
+        return updated;
+      });
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("connect_error");
+      socket.io.off("reconnect");
+      socket.off("order:new");
+      socket.off("order:updated");
+      socket.off("order:searchingDriver");
+      socket.off("order:noDriverFound");
+      socket.off("order:driverAssigned");
+      socket.off("order:cancelled");
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, [accessToken, syncOrders, flushQueue, playOrderSound]);
+
+  const toggleStatus = async () => {
+    const res = await api.patch("/restaurant/toggle-status");
+    setRestaurant((prev) => ({ ...prev, status: res.data.status }));
+  };
+
+  return (
+    <RestaurantContext.Provider
+      value={{
+        restaurant,
+        loading,
+        toggleStatus,
+        newOrders,
+        setNewOrders,
+        orders,
+        setOrders,
+        socket: socketInstance,
+        driverAlerts,
+        setDriverAlerts,
+        currency: restaurant?.currency || "SYP",
+        taxRate: restaurant?.taxRate || 0,
+        country: restaurant?.country || "SY",
+        syncOrders,
+        isConnected,
+        emitOrQueue,
+      }}
+    >
+      {children}
+    </RestaurantContext.Provider>
+  );
 };
