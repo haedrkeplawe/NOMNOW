@@ -30,6 +30,52 @@ const cancelActiveSearch = (orderId) => {
   }
 };
 
+// v4.3 — دالة موحّدة لإيقاف بحث نشط عن سائق فور إلغاء/رفض الطلب. تُستدعى
+// من مكانين: (1) مباشرة من restaurant.socket.js لحظة ما المطعم يلغي
+// الطلب، و(2) دفاعياً من داخل startSearchRound نفسها تحت — كشبكة أمان
+// لأي مسار تاني ممكن يخرج الطلب من حالة "accepted" بدون ما يمر من هون
+// مباشرة. بتعمل 3 أشياء بعملية واحدة:
+//   1) تلغي المؤقت المحلي فوراً بدل ما تستناه ينتهي لحاله (لحد 30 ثانية)
+//   2) تصفّر driverSearchStatus لقيمة "cancelled" المخصصة (تختلف عن
+//      "failed" التي تعني "دورنا على سواق ولم نجد أحداً") وتفضّي
+//      pendingDriverIds لأنه لم يعد أحد ينتظر رد بشأنها. notifiedDriverIds
+//      تبقى كما هي عمداً — سجل تاريخي لمن عُرض عليهم الطلب، قد يفيد
+//      لاحقاً بأي تحليل لتكرار رفض سائق معيّن (نقطة مستقبلية منفصلة)
+//   3) تبلّغ فوراً كل سائق كان لسا ينتظر منه رد بهذه الجولة تحديداً
+//      (نفس من كان جوا pendingDriverIds قبل التصفير) بحدث جديد
+//      order:driverRequest:cancelled، حتى يختفي العرض من شاشته فوراً
+//      بدل ما ينتظر انتهاء الوقت أو ياخد لاحقاً رسالة "أخذه سائق آخر"
+//      غير الدقيقة لو حاول يرد
+const stopActiveSearch = async (io, orderId) => {
+  cancelActiveSearch(orderId);
+
+  // findOneAndUpdate بترجع افتراضياً الوثيقة *قبل* التعديل، فهيك منعرف
+  // بالضبط مين كان جوا pendingDriverIds قبل ما نفضيها تحت
+  const previous = await Order.findOneAndUpdate(
+    { _id: orderId, driverSearchStatus: "searching" },
+    {
+      $set: {
+        driverSearchStatus: "cancelled",
+        pendingDriverIds: [],
+        driverSearchExpiresAt: null,
+      },
+    },
+  ).select("pendingDriverIds");
+
+  // ما كان في بحث نشط فعلياً وقت الاستدعاء (كانت مثلاً "failed" أو
+  // "assigned" أو null أصلاً) — ما في داعي لأي إشعار
+  if (!previous) return;
+
+  previous.pendingDriverIds.forEach((driverId) => {
+    io.of("/driver")
+      .to(driverId.toString())
+      .emit("order:driverRequest:cancelled", {
+        orderId,
+        message: "This order has been cancelled by the restaurant",
+      });
+  });
+};
+
 // v4.1 — نقطة الدخول الوحيدة لبدء/متابعة جولة بحث عن سائق. بتاخد orderId
 // بس (مش order/location/attempt/excluded كباراميترات منفصلة زي قبل) —
 // هيك ما في مجال إطلاقًا لتمرير باراميتر غلط بمكانه (كان هيك انصلح
@@ -43,11 +89,18 @@ const startSearchRound = async (io, orderId) => {
   // driverEarning تحت (راجع BACKEND_TASK_driver_offer_data.md قسم 3.2 —
   // بدونهم driverEarning كانت ترجع undefined حتى لو أضفناها للحمولة)
   const current = await Order.findById(orderId).select(
-    "driverId orderStatus restaurantId driverSearchAttempt notifiedDriverIds orderNumber totalPrice items deliveryAddress deliveryFee originalDeliveryFee",
+    "driverId orderStatus restaurantId driverSearchAttempt notifiedDriverIds orderNumber totalPrice items deliveryAddress deliveryFee originalDeliveryFee driverSearchStatus",
   );
 
   // الطلب اتلغى، أو حدا ثاني أخذه، أو حالته تغيّرت — ما في داعي نكمل
   if (!current || current.driverId || current.orderStatus !== "accepted") {
+    // v4.3 — شبكة أمان: لو طلعنا من هون بسبب إن الطلب لم يعد "accepted"
+    // (انلغى غالباً) وكان driverSearchStatus لسا معلّم "searching"، ننظفه
+    // هون كمان — حتى لو صار الخروج من "accepted" من مسار ما فكرنا فيه
+    // أصلاً حالياً أو مستقبلاً (راجع stopActiveSearch فوق للتفاصيل)
+    if (current && current.driverSearchStatus === "searching") {
+      await stopActiveSearch(io, orderId);
+    }
     return;
   }
 
@@ -196,5 +249,6 @@ const startSearchRecoverySweep = (io) => {
 module.exports = {
   startSearchRound,
   cancelActiveSearch,
+  stopActiveSearch,
   startSearchRecoverySweep,
 };

@@ -101,7 +101,11 @@ const orderSchema = new mongoose.Schema(
 
     driverSearchStatus: {
       type: String,
-      enum: ["searching", "failed", "assigned"],
+      // v4.3 — أضيفت "cancelled": تُستخدم فقط عندما يتوقف بحث نشط عن
+      // سائق بسبب إلغاء/رفض الطلب من المطعم — بعكس "failed" التي تعني
+      // تحديداً "استُنفدت كل المحاولات ولم يوجد سائق". التمييز مهم
+      // لأي تحليل/تقرير لاحق. راجع stopActiveSearch في order.service.js
+      enum: ["searching", "failed", "assigned", "cancelled"],
       default: null,
     },
 

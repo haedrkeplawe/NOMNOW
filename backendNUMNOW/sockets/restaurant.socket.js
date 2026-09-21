@@ -12,6 +12,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
 const {
   startSearchRound,
   cancelActiveSearch,
+  stopActiveSearch,
 } = require("./services/order.service");
 // v3.5
 const { notifyUserOrderStatus } = require("./services/notification.service");
@@ -94,6 +95,14 @@ module.exports = (io, restaurantNS) => {
 
         await order.save();
 
+        // v4.3 — لو كان في بحث نشط عن سائق شغال وقت الإلغاء
+        // (driverSearchStatus == "searching")، نوقفه فوراً بدل ما نتركه
+        // معلّقاً لحد ما ينتهي تلقائياً (لحد 30 ثانية) — راجع
+        // stopActiveSearch بـ order.service.js لتفاصيل ما تعمله بالضبط
+        if (status === "cancelled") {
+          await stopActiveSearch(io, order._id);
+        }
+
         const populatedOrder = await Order.findById(order._id)
           .populate("userId", "name phone")
           .populate("driverId", "name phone vehicletype vehicleplate rating");
@@ -146,6 +155,13 @@ module.exports = (io, restaurantNS) => {
 
         if (!order) {
           return socket.emit("order:error", { message: m.orderNotFound });
+        }
+
+        // v4.3 — حماية إضافية عند المصدر: حتى لو driverSearchStatus كانت
+        // (بالخطأ أو بمسار لم نتوقعه) "searching"/"failed" على طلب لم
+        // يعد "accepted" (اتلغى مثلاً)، ما نسمح بإعادة تفعيل بحث عليه
+        if (order.orderStatus !== "accepted") {
+          return socket.emit("order:error", { message: m.notSearchable });
         }
 
         if (!["failed", "searching"].includes(order.driverSearchStatus)) {
