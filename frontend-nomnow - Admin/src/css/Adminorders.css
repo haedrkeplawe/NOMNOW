@@ -659,6 +659,140 @@
   color: #e7000b;
 }
 
+/* v4.6 — تدخل الأدمن بالإلغاء */
+.aord-cancel-info {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #c2000a;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.aord-cancel-info strong {
+  text-transform: capitalize;
+}
+
+.aord-admin-cancel-btn {
+  margin-top: 14px;
+  width: 100%;
+  padding: 11px;
+  border-radius: 10px;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+  color: #e7000b;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: 0.15s;
+}
+.aord-admin-cancel-btn:hover {
+  background: #e7000b;
+  color: white;
+}
+
+.aord-cancel-panel {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #fecaca;
+  background: var(--primary-background);
+}
+.aord-cancel-panel h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text);
+  margin-bottom: 4px;
+}
+.aord-cancel-panel__sub {
+  font-size: 12.5px;
+  color: var(--secondary-text);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+.aord-cancel-panel__reasons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.aord-cancel-panel__reason {
+  padding: 7px 13px;
+  border-radius: 20px;
+  border: 1px solid var(--secondary-border);
+  background: var(--background-color);
+  color: var(--primary-text);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.aord-cancel-panel__reason:hover {
+  border-color: #e7000b;
+}
+.aord-cancel-panel__reason.selected {
+  border-color: #e7000b;
+  background: #fef2f2;
+  color: #e7000b;
+  font-weight: 600;
+}
+.aord-cancel-panel__note {
+  width: 100%;
+  resize: vertical;
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--secondary-border);
+  background: var(--background-color);
+  color: var(--primary-text);
+  font-size: 13px;
+  font-family: inherit;
+  margin-bottom: 10px;
+}
+.aord-cancel-panel__error {
+  color: #e7000b;
+  font-size: 12.5px;
+  margin-bottom: 10px;
+}
+.aord-cancel-panel__actions {
+  display: flex;
+  gap: 10px;
+}
+.aord-cancel-panel__actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: none;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.aord-cancel-panel__actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.aord-cancel-panel__back {
+  background: var(--background-color);
+  border: 1px solid var(--secondary-border) !important;
+  color: var(--primary-text);
+}
+.aord-cancel-panel__back:hover {
+  background: var(--primary-hover);
+}
+.aord-cancel-panel__confirm {
+  background: #e7000b;
+  color: white;
+}
+.aord-cancel-panel__confirm:hover {
+  background: #c40009;
+}
+
 /* ── Restaurant Filter Banner ───────────────────────────────── */
 .aord-filter-banner {
   display: flex;

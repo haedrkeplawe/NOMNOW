@@ -58,6 +58,7 @@ router.patch(
 router.get("/orders", adminController.getAdminOrders);
 router.get("/orders/map", adminController.getOrdersMapData);
 router.get("/orders/:id/details", adminController.getOrderFullDetails);
+router.patch("/orders/:id/cancel", adminController.cancelOrderByAdmin);
 
 // user
 router.route("/customer").get(adminController.getAllCustomer);

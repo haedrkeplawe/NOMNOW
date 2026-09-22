@@ -115,6 +115,37 @@ module.exports = (io, driverNS) => {
         socket.emit("driver:currentStatus", {
           availability: updatedDriver.availability,
         });
+
+        // v4.6 — لو كان عنده عرض توصيل معلّق بأي طلب وقت ما راح أوفلاين،
+        // منشيله من قائمة الانتظار فورًا — قرار صريح ومتعمّد (رجع
+        // أوفلاين)، مش تجاهل سلبي، فما لازم يُحسب "ignored" بـ
+        // orderOfferStats (راجع النقاش: تتبّع رفض السائق). لو صارت
+        // القائمة فاضية، منبلش الجولة الجاية فورًا بدل ما نستنى التايم
+        // آوت — نفس منطق الرفض الجماعي الموجود أصلاً.
+        try {
+          const affectedOrders = await Order.find({
+            pendingDriverIds: driverId,
+            orderStatus: "accepted",
+          }).select("_id");
+
+          for (const o of affectedOrders) {
+            const updated = await Order.findOneAndUpdate(
+              { _id: o._id, driverId: null, orderStatus: "accepted" },
+              { $pull: { pendingDriverIds: driverId } },
+              { new: true },
+            ).select("pendingDriverIds");
+
+            if (updated && updated.pendingDriverIds.length === 0) {
+              cancelActiveSearch(o._id);
+              await startSearchRound(io, o._id);
+            }
+          }
+        } catch (cleanupErr) {
+          console.error(
+            "goOffline pendingDriverIds cleanup error:",
+            cleanupErr,
+          );
+        }
       } catch (error) {
         socket.emit("driver:goOffline:error", { message: error.message });
       }

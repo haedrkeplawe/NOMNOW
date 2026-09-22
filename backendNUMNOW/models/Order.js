@@ -126,9 +126,12 @@ const orderSchema = new mongoose.Schema(
     // v4.4 — بيانات الإلغاء/الرفض. تُملأ فقط لما orderStatus تصير
     // "cancelled". راجع النقاش الكامل: سبب الإلغاء + التمييز بين
     // "رفض" و"إلغاء" — الجولة يلي أضافت هالحقول.
+    // v4.6 — أضيفت "admin": إلغاء إداري مباشر لحل النزاعات، وهو الوحيد
+    // المسموح له يلغي من أي حالة (حتى picked_up/on_the_way) — راجع
+    // ADMIN_CANCEL_REASON_CODES بـ admin.controller.js
     cancelledBy: {
       type: String,
-      enum: ["restaurant", "user"],
+      enum: ["restaurant", "user", "admin"],
       default: null,
     },
     // نسخة من orderStatus لحظة الإلغاء بالضبط (قبل ما تصير "cancelled") —
@@ -155,6 +158,12 @@ const orderSchema = new mongoose.Schema(
         "changed_mind",
         "ordered_by_mistake",
         "taking_too_long",
+        // v4.6 — أسباب الأدمن (إلغاء إداري لحل نزاع)
+        "customer_dispute",
+        "fraud_suspected",
+        "driver_unreachable",
+        "duplicate_order",
+        "support_request",
         "other",
       ],
       default: null,

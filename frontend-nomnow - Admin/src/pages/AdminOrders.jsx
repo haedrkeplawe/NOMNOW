@@ -10,10 +10,21 @@ import {
   FiUser,
   FiTruck,
   FiRefreshCw,
+  FiAlertTriangle,
 } from "react-icons/fi";
 import { BsShop } from "react-icons/bs";
 import { FaStar } from "react-icons/fa";
 import { LuCar, LuMapPin } from "react-icons/lu";
+
+// v4.6 — نفس ADMIN_CANCEL_REASON_CODES بـ admin.controller.js
+const ADMIN_CANCEL_REASONS = [
+  { code: "customer_dispute", label: "Customer dispute" },
+  { code: "fraud_suspected", label: "Fraud suspected" },
+  { code: "driver_unreachable", label: "Driver unreachable" },
+  { code: "duplicate_order", label: "Duplicate order" },
+  { code: "support_request", label: "Support request" },
+  { code: "other", label: "Other" },
+];
 
 // ─── Status meta ──────────────────────────────────────────────
 const STATUS_META = {
@@ -154,9 +165,52 @@ const timeAgo = (date) => {
 };
 
 // ─── Order Detail Modal ───────────────────────────────────────
-const OrderModal = ({ order, onClose }) => {
+const OrderModal = ({ order, onClose, api, onUpdated }) => {
+  // v4.6 — حالة تدفّق إلغاء الأدمن (راجع النقاش: صلاحية الأدمن بالتدخل
+  // المباشر). قسم ينفتح جوا نفس المودال بدل ما يفتح مودال فوق مودال.
+  const [showCancelPanel, setShowCancelPanel] = useState(false);
+  const [selectedReason, setSelectedReason] = useState(null);
+  const [reasonNote, setReasonNote] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState(null);
+
   if (!order) return null;
   const currency = order.restaurantId?.currency || "SYP";
+  const canCancel = !["delivered", "cancelled"].includes(order.orderStatus);
+
+  const openCancelPanel = () => {
+    setSelectedReason(null);
+    setReasonNote("");
+    setCancelError(null);
+    setShowCancelPanel(true);
+  };
+
+  const confirmAdminCancel = async () => {
+    if (!selectedReason) {
+      setCancelError("Please select a reason");
+      return;
+    }
+    if (selectedReason === "other" && !reasonNote.trim()) {
+      setCancelError("Please describe the reason");
+      return;
+    }
+    setCancelling(true);
+    setCancelError(null);
+    try {
+      const res = await api.patch(`/admin/orders/${order._id}/cancel`, {
+        reasonCode: selectedReason,
+        reasonNote: reasonNote.trim() || undefined,
+      });
+      setShowCancelPanel(false);
+      onUpdated?.(res.data.order);
+    } catch (err) {
+      setCancelError(
+        err.response?.data?.message || "Failed to cancel the order",
+      );
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <div className="aord-overlay" onClick={onClose}>
@@ -356,6 +410,102 @@ const OrderModal = ({ order, onClose }) => {
             </span>
             <SettleBadge status={order.settlementStatus} />
           </div>
+
+          {/* v4.6 — سبب الإلغاء السابق (لو موجود) */}
+          {order.orderStatus === "cancelled" &&
+            order.cancellationReasonCode && (
+              <div className="aord-cancel-info">
+                <FiAlertTriangle size={13} />
+                <span>
+                  Cancelled by <strong>{order.cancelledBy || "—"}</strong> —{" "}
+                  {order.cancellationReasonCode === "other"
+                    ? order.cancellationReasonNote
+                    : order.cancellationReasonCode.replaceAll("_", " ")}
+                </span>
+              </div>
+            )}
+
+          {/* v4.6 — تدخل الأدمن: إلغاء مباشر لحل النزاعات، من أي حالة
+              غير delivered/cancelled (حتى picked_up/on_the_way) */}
+          {canCancel && !showCancelPanel && (
+            <button className="aord-admin-cancel-btn" onClick={openCancelPanel}>
+              <FiAlertTriangle size={14} />
+              Cancel Order (Admin Intervention)
+            </button>
+          )}
+
+          {canCancel && showCancelPanel && (
+            <div className="aord-cancel-panel">
+              <h4>Cancellation reason</h4>
+              <p className="aord-cancel-panel__sub">
+                This will cancel the order immediately from its current status (
+                {STATUS_META[order.orderStatus]?.label || order.orderStatus}
+                ), notify the customer and restaurant, and stop any active
+                driver search.
+                {order.driverId && (
+                  <>
+                    {" "}
+                    A driver is currently assigned — they will be notified to
+                    stop the delivery.
+                  </>
+                )}
+              </p>
+
+              <div className="aord-cancel-panel__reasons">
+                {ADMIN_CANCEL_REASONS.map((r) => (
+                  <button
+                    key={r.code}
+                    type="button"
+                    className={`aord-cancel-panel__reason${
+                      selectedReason === r.code ? " selected" : ""
+                    }`}
+                    onClick={() => {
+                      setSelectedReason(r.code);
+                      setCancelError(null);
+                    }}
+                  >
+                    {r.label}
+                  </button>
+                ))}
+              </div>
+
+              {selectedReason === "other" && (
+                <textarea
+                  className="aord-cancel-panel__note"
+                  placeholder="Describe the reason..."
+                  rows={2}
+                  value={reasonNote}
+                  onChange={(e) => {
+                    setReasonNote(e.target.value);
+                    setCancelError(null);
+                  }}
+                />
+              )}
+
+              {cancelError && (
+                <p className="aord-cancel-panel__error">{cancelError}</p>
+              )}
+
+              <div className="aord-cancel-panel__actions">
+                <button
+                  type="button"
+                  className="aord-cancel-panel__back"
+                  onClick={() => setShowCancelPanel(false)}
+                  disabled={cancelling}
+                >
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="aord-cancel-panel__confirm"
+                  onClick={confirmAdminCancel}
+                  disabled={cancelling}
+                >
+                  {cancelling ? "Cancelling…" : "Confirm Cancellation"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -699,6 +849,16 @@ const AdminOrders = () => {
         <OrderModal
           order={selectedOrder}
           onClose={() => setSelectedOrder(null)}
+          api={api}
+          onUpdated={(updatedOrder) => {
+            setSelectedOrder(updatedOrder);
+            setOrders((prev) =>
+              prev.map((o) => (o._id === updatedOrder._id ? updatedOrder : o)),
+            );
+            // v4.6 — الرقم بالكرت العلوي ("Cancelled") ما رح ينعكس فورًا
+            // من غير إعادة جلب — أبسط حل موثوق هون
+            fetchOrders();
+          }}
         />
       )}
     </div>

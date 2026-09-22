@@ -17,6 +17,20 @@ const MainCategory = require("../models/mainCategory");
 // حتى يطابق رقم لوحة الأدمن الرقم المخزَّن بـ driver.rating
 const { averageLatestPerUser } = require("../utils/ratingAverage");
 
+// v4.6 — لإلغاء الأدمن (راجع النقاش: صلاحية الأدمن بالتدخل المباشر)
+const Stripe = require("stripe");
+const { HttpsProxyAgent } = require("https-proxy-agent");
+const stripeAgent = process.env.HTTP_PROXY
+  ? new HttpsProxyAgent(process.env.HTTP_PROXY)
+  : undefined;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  httpAgent: stripeAgent,
+});
+const { stopActiveSearch } = require("../sockets/services/order.service");
+const {
+  notifyUserOrderStatus,
+} = require("../sockets/services/notification.service");
+
 exports.createRestaurant = async (req, res) => {
   try {
     const {
@@ -857,6 +871,131 @@ exports.getOrderFullDetails = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+// v4.6 — الأسباب المسموحة لإلغاء الأدمن تحديدًا (سياق حل النزاعات، يختلف
+// عن أسباب المطعم بـ RESTAURANT_CANCEL_REASON_CODES بـ restaurant.socket.js
+// وأسباب المستخدم بـ USER_CANCEL_REASON_CODES بـ user.controller.js)
+const ADMIN_CANCEL_REASON_CODES = [
+  "customer_dispute",
+  "fraud_suspected",
+  "driver_unreachable",
+  "duplicate_order",
+  "support_request",
+  "other",
+];
+
+// v4.6 — إلغاء إداري مباشر: الصلاحية الوحيدة القادرة تلغي من أي حالة (حتى
+// picked_up/on_the_way) — لحل النزاعات والحالات الاستثنائية اللي المطعم
+// ما إله صلاحية فيها أصلاً (سائق اختفى، نزاع بعد التسليم، احتيال...).
+// راجع النقاش الكامل: صلاحية الأدمن بالتدخل المباشر.
+exports.cancelOrderByAdmin = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reasonCode, reasonNote } = req.body;
+
+    const order = await Order.findById(id);
+    if (!order) {
+      return res.status(404).json({ message: "Order not found" });
+    }
+
+    // الحالتان الوحيدتان النهائيتان اللي حتى الأدمن ما يقدر يرجع فيهم
+    if (["delivered", "cancelled"].includes(order.orderStatus)) {
+      return res.status(400).json({
+        message: `Cannot cancel: order is already ${order.orderStatus}`,
+      });
+    }
+
+    if (!reasonCode || !ADMIN_CANCEL_REASON_CODES.includes(reasonCode)) {
+      return res
+        .status(400)
+        .json({ message: "A valid cancellation reason is required" });
+    }
+    if (reasonCode === "other" && !reasonNote?.trim()) {
+      return res.status(400).json({ message: "Please describe the reason" });
+    }
+
+    const previousStatus = order.orderStatus;
+    // لازم نلتقطها قبل ما نلمس order.orderStatus — بيقرر هل نبلّغ سائق
+    const hadAssignedDriver = !!order.driverId;
+
+    order.orderStatus = "cancelled";
+    order.cancelledBy = "admin";
+    order.cancelledFromStatus = previousStatus;
+    order.cancellationReasonCode = reasonCode;
+    order.cancellationReasonNote = reasonNote?.trim() || null;
+
+    // نفس منطق الاسترداد التلقائي الموجود بمساري المطعم والمستخدم —
+    // للطلبات الألمانية المدفوعة فقط (راجع النقاش: معالجة فشل الـ Refund،
+    // اللي تأجّل — بس هون منستخدم نفس المنطق الموجود أصلاً كما هو)
+    if (
+      order.paymentDetails?.paymentIntentId &&
+      order.paymentStatus === "paid"
+    ) {
+      try {
+        await stripe.refunds.create({
+          payment_intent: order.paymentDetails.paymentIntentId,
+        });
+        order.paymentStatus = "refunded";
+      } catch (refundErr) {
+        console.error("Admin-cancel refund failed:", refundErr.message);
+      }
+    }
+
+    await order.save();
+
+    const io = req.io;
+
+    // إيقاف أي بحث سائق نشط — آمنة تُستدعى دايمًا، بترجع فورًا بصمت لو
+    // ما في شي أصلاً يحتاج تنظيف (راجع stopActiveSearch بـ order.service.js)
+    await stopActiveSearch(io, order._id);
+
+    // إشعار المطعم (نفس شكل الحدث اللي order:updateStatus بيبعته)
+    io.of("/restaurant")
+      .to(order.restaurantId.toString())
+      .emit("order:updated", { order });
+
+    // إشعار اليوزر — Socket حي + Push (السبب متضمّن تلقائيًا بنص
+    // الإشعار، راجع notification.service.js)
+    io.of("/user").to(order.userId.toString()).emit("order:statusUpdated", {
+      orderId: order._id,
+      orderNumber: order.orderNumber,
+      status: "cancelled",
+    });
+    notifyUserOrderStatus(order.userId, "cancelled", order).catch((err) =>
+      console.error("Admin-cancel push notification error:", err),
+    );
+
+    // v4.6 — جديد: إشعار السائق فقط لو كان معيّن فعلاً على الطلب (حالة
+    // ما كانت ممكنة قبل هالتحديث، لأن المطعم/المستخدم ما يقدروا يلغوا
+    // بعد تعيين سائق). يلمس تطبيق فلاتر — راجع ملف الشرح المرفق.
+    if (hadAssignedDriver) {
+      io.of("/driver")
+        .to(order.driverId.toString())
+        .emit("order:cancelledByAdmin", {
+          orderId: order._id,
+          orderNumber: order.orderNumber,
+          message: "This order was cancelled by NomNow support.",
+        });
+    }
+
+    // نفس شكل populate يلي getOrderFullDetails بيرجعه، حتى الواجهة تقدر
+    // تحدّث المودال بمكانه مباشرة من غير ما تفقد بيانات الأطراف الثلاثة
+    await order.populate("userId", "name phone gender");
+    await order.populate(
+      "restaurantId",
+      "name phone address location currency country rating",
+    );
+    await order.populate(
+      "driverId",
+      "name phone vehicletype vehicleplate rating currentLocation availability",
+    );
+
+    res.status(200).json({ success: true, order });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
