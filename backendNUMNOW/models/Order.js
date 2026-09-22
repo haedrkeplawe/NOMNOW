@@ -123,6 +123,48 @@ const orderSchema = new mongoose.Schema(
     }, // مين لسا ما ردّ (قبول/رفض) بالجولة الحالية — لما تصير فاضية (الكل رفض) ننتقل فورًا للجولة الجاية
     driverSearchExpiresAt: { type: Date, default: null }, // وقت انتهاء الجولة الحالية — تُستخدم لاستعادة البحث المتوقف
 
+    // v4.4 — بيانات الإلغاء/الرفض. تُملأ فقط لما orderStatus تصير
+    // "cancelled". راجع النقاش الكامل: سبب الإلغاء + التمييز بين
+    // "رفض" و"إلغاء" — الجولة يلي أضافت هالحقول.
+    cancelledBy: {
+      type: String,
+      enum: ["restaurant", "user"],
+      default: null,
+    },
+    // نسخة من orderStatus لحظة الإلغاء بالضبط (قبل ما تصير "cancelled") —
+    // هاي وحدها كافية لمعرفة "رفض قبل القبول" (كانت pending) مقابل
+    // "إلغاء بعد القبول" (كانت accepted/preparing/ready)، بدون حاجة
+    // لحقل تصنيف منفصل
+    cancelledFromStatus: {
+      type: String,
+      default: null,
+    },
+    // أسباب المطعم (item_unavailable...invalid_order_info) وأسباب
+    // المستخدم (changed_mind...taking_too_long) بنفس enum الموحّد؛
+    // "other" مشترك بين الاثنين. التحقق من أي الأسباب مسموحة لأي طرف
+    // يصير عند نقطة الدخول (restaurant.socket.js / user_controller.js)
+    // مش هون بالموديل
+    cancellationReasonCode: {
+      type: String,
+      enum: [
+        "item_unavailable",
+        "kitchen_overloaded",
+        "closing_soon",
+        "no_driver_found",
+        "invalid_order_info",
+        "changed_mind",
+        "ordered_by_mistake",
+        "taking_too_long",
+        "other",
+      ],
+      default: null,
+    },
+    // نص حر — إجباري لما الكود "other"، اختياري كتفصيل إضافي لغيره
+    cancellationReasonNote: {
+      type: String,
+      default: null,
+    },
+
     paymentMethod: {
       type: String,
       enum: ["cash", "card", "visa", "mastercard", "paypal", "apple_pay"],

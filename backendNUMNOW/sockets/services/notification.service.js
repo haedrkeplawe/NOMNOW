@@ -17,6 +17,18 @@ const { dispatchNotification } = require("../../utils/notificationDispatcher");
  * ملاحظة للتوسع المستقبلي: أي حالة جديدة تُضاف هون فقط،
  * وبتشتغل تلقائياً بمجرد استدعاء notifyUserOrderStatus بمفتاحها.
  */
+// v4.4 — تسميات عربية لأسباب الإلغاء (نفس enum الموجود بـ Order.js).
+// هاد الملف بيولّد نصوص عربية بس حاليًا (كل القوالب تحت مكتوبة عربي
+// مباشرة بدون طبقة ترجمة)، فالتزمنا بنفس الأسلوب. "other" مستثناة
+// عمداً — بحالتها منعرض cancellationReasonNote (النص الحر) بدل تسمية ثابتة
+const CANCELLATION_REASON_LABELS_AR = {
+  item_unavailable: "صنف غير متوفر",
+  kitchen_overloaded: "ضغط بالمطبخ",
+  closing_soon: "قرب موعد الإغلاق",
+  no_driver_found: "تعذر إيجاد سائق توصيل",
+  invalid_order_info: "بيانات الطلب غير صحيحة",
+};
+
 const ORDER_STATUS_TEMPLATES = {
   accepted: (order) => ({
     title: "تم قبول طلبك ✅",
@@ -40,11 +52,24 @@ const ORDER_STATUS_TEMPLATES = {
   }),
   cancelled: (order) => {
     const refunded = order.paymentStatus === "refunded";
+
+    // v4.4 — لو متوفر سبب، نضيفه للنص: "other" نعرض نصها الحر، غيرها
+    // نعرض التسمية الثابتة. ما منضيف شي لو ما في سبب مسجّل (طلبات من
+    // قبل هالتحديث مثلاً)
+    let reasonText = null;
+    if (order.cancellationReasonCode === "other") {
+      reasonText = order.cancellationReasonNote || null;
+    } else if (order.cancellationReasonCode) {
+      reasonText =
+        CANCELLATION_REASON_LABELS_AR[order.cancellationReasonCode] || null;
+    }
+    const reasonSuffix = reasonText ? ` — السبب: ${reasonText}` : "";
+
     return {
       title: "تم إلغاء طلبك ❌",
       body: refunded
-        ? `نأسف، ألغى المطعم طلبك رقم ${order.orderNumber} وتم استرجاع المبلغ المدفوع`
-        : `نأسف، ألغى المطعم طلبك رقم ${order.orderNumber}`,
+        ? `نأسف، ألغى المطعم طلبك رقم ${order.orderNumber}${reasonSuffix} وتم استرجاع المبلغ المدفوع`
+        : `نأسف، ألغى المطعم طلبك رقم ${order.orderNumber}${reasonSuffix}`,
     };
   },
 };

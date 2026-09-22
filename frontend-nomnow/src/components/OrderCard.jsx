@@ -73,6 +73,17 @@ const PAYMENT_STATUS_META = {
   refunded: { labelKey: "orders.payment.refunded", cls: "failed" },
 };
 
+// v4.4 — نفس قائمة RESTAURANT_CANCEL_REASON_CODES الموجودة بالباك اند
+// (restaurant.socket.js) — أي تعديل بالقائمتين لازم يصير بالاثنين مع بعض
+const CANCEL_REASONS = [
+  { code: "item_unavailable", labelKey: "orders.reasonItemUnavailable" },
+  { code: "kitchen_overloaded", labelKey: "orders.reasonKitchenOverloaded" },
+  { code: "closing_soon", labelKey: "orders.reasonClosingSoon" },
+  { code: "no_driver_found", labelKey: "orders.reasonNoDriverFound" },
+  { code: "invalid_order_info", labelKey: "orders.reasonInvalidOrderInfo" },
+  { code: "other", labelKey: "orders.reasonOther" },
+];
+
 const OrderCard = ({ order }) => {
   const [loading, setLoading] = useState(false);
   const [updateError, setUpdateError] = useState(null);
@@ -82,6 +93,13 @@ const OrderCard = ({ order }) => {
     useRestaurant();
   const { t } = useTranslation();
   const [pendingSince, setPendingSince] = useState(null);
+
+  // v4.4 — حالة نافذة سبب الإلغاء (مشتركة بين الرفض من pending، والإلغاء
+  // أثناء البحث، والإلغاء من بانر "ما لقينا سائق" — نفس النافذة للثلاثة)
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [selectedReasonCode, setSelectedReasonCode] = useState(null);
+  const [reasonNoteInput, setReasonNoteInput] = useState("");
+  const [reasonError, setReasonError] = useState(null);
 
   const driverAlert =
     driverAlerts[order._id?.toString()] ||
@@ -100,7 +118,7 @@ const OrderCard = ({ order }) => {
       minute: "2-digit",
     });
 
-  const handleUpdateStatus = (newStatus) => {
+  const handleUpdateStatus = (newStatus, extra = {}) => {
     if (loading) return;
     setLoading(true);
     setUpdateError(null);
@@ -108,6 +126,7 @@ const OrderCard = ({ order }) => {
     emitOrQueue("order:updateStatus", {
       orderId: order._id,
       status: newStatus,
+      ...extra,
     });
 
     // لو متصل → timeout عادي
@@ -132,7 +151,33 @@ const OrderCard = ({ order }) => {
     setLoading(false);
     setUpdateError(null);
     setPendingSince(null);
+    // v4.4 — لو الطلب فعليًا صار cancelled، سكّر النافذة (لو كانت مفتوحة)
+    setShowCancelModal(false);
   }, [order.orderStatus]);
+
+  // v4.4 — فتح نافذة سبب الإلغاء (نفسها لأي زر إلغاء/رفض بالكرت)
+  const openCancelModal = () => {
+    if (loading) return;
+    setSelectedReasonCode(null);
+    setReasonNoteInput("");
+    setReasonError(null);
+    setShowCancelModal(true);
+  };
+
+  const confirmCancel = () => {
+    if (!selectedReasonCode) {
+      setReasonError(t("orders.cancelReasonRequired"));
+      return;
+    }
+    if (selectedReasonCode === "other" && !reasonNoteInput.trim()) {
+      setReasonError(t("orders.cancelReasonNoteRequired"));
+      return;
+    }
+    handleUpdateStatus("cancelled", {
+      reasonCode: selectedReasonCode,
+      reasonNote: reasonNoteInput.trim() || undefined,
+    });
+  };
 
   // تنظيف عند الـ unmount لمنع memory leak
   useEffect(() => {
@@ -346,7 +391,7 @@ const OrderCard = ({ order }) => {
                   بتوقف جولة البحث وتبلّغ السواق المنتظرين فورًا) */}
               <button
                 className="cancel-order-btn"
-                onClick={() => handleUpdateStatus("cancelled")}
+                onClick={openCancelModal}
                 disabled={loading}
               >
                 {loading ? "..." : t("orders.cancelOrder")}
@@ -371,7 +416,7 @@ const OrderCard = ({ order }) => {
               </button>
               <button
                 className="cancel-order-btn"
-                onClick={() => handleUpdateStatus("cancelled")}
+                onClick={openCancelModal}
                 disabled={loading}
               >
                 {loading ? "..." : t("orders.cancelOrder")}
@@ -416,12 +461,84 @@ const OrderCard = ({ order }) => {
           </button>
           <button
             className="action-btn reject"
-            onClick={() => handleUpdateStatus("cancelled")}
+            onClick={openCancelModal}
             disabled={loading || !!pendingSince}
           >
             {loading ? "..." : t("orders.reject")}
           </button>
           {updateError && <p className="order-update-error">{updateError}</p>}
+        </div>
+      )}
+
+      {/* v4.4 — نافذة سبب الإلغاء/الرفض، مشتركة لكل أزرار الإلغاء بالكرت */}
+      {showCancelModal && (
+        <div
+          className="cancel-reason-overlay"
+          onClick={() => setShowCancelModal(false)}
+        >
+          <div
+            className="cancel-reason-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3>{t("orders.cancelReasonTitle")}</h3>
+            <p className="cancel-reason-subtitle">
+              {t("orders.cancelReasonSubtitle")}
+            </p>
+
+            <div className="cancel-reason-options">
+              {CANCEL_REASONS.map((reason) => (
+                <button
+                  key={reason.code}
+                  type="button"
+                  className={`cancel-reason-option${
+                    selectedReasonCode === reason.code ? " selected" : ""
+                  }`}
+                  onClick={() => {
+                    setSelectedReasonCode(reason.code);
+                    setReasonError(null);
+                  }}
+                >
+                  {t(reason.labelKey)}
+                </button>
+              ))}
+            </div>
+
+            {selectedReasonCode === "other" && (
+              <textarea
+                className="cancel-reason-note"
+                placeholder={t("orders.cancelReasonNotePlaceholder")}
+                value={reasonNoteInput}
+                onChange={(e) => {
+                  setReasonNoteInput(e.target.value);
+                  setReasonError(null);
+                }}
+                rows={3}
+              />
+            )}
+
+            {reasonError && (
+              <p className="cancel-reason-error">{reasonError}</p>
+            )}
+
+            <div className="cancel-reason-actions">
+              <button
+                type="button"
+                className="cancel-reason-close-btn"
+                onClick={() => setShowCancelModal(false)}
+                disabled={loading}
+              >
+                {t("orders.cancelReasonClose")}
+              </button>
+              <button
+                type="button"
+                className="cancel-reason-confirm-btn"
+                onClick={confirmCancel}
+                disabled={loading}
+              >
+                {loading ? "..." : t("orders.cancelReasonConfirm")}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

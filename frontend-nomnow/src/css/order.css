@@ -486,6 +486,117 @@
   cursor: not-allowed;
 }
 
+/* v4.4 — نافذة سبب الإلغاء/الرفض */
+.orders-page .cancel-reason-overlay {
+  position: fixed;
+  inset: 0;
+  background: #00000080;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+.orders-page .cancel-reason-modal {
+  width: 100%;
+  max-width: 420px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: var(--primary-background);
+  border: 1px solid var(--primary-border);
+  border-radius: 14px;
+  box-shadow: 0 10px 30px var(--primary-shadow);
+  padding: 20px;
+}
+.orders-page .cancel-reason-modal h3 {
+  color: var(--primary-text);
+  font-size: 17px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.orders-page .cancel-reason-subtitle {
+  color: var(--secondary-text);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.orders-page .cancel-reason-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.orders-page .cancel-reason-option {
+  text-align: start;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--primary-border);
+  background: var(--third-background);
+  color: var(--primary-text);
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.orders-page .cancel-reason-option:hover {
+  border-color: var(--primary-orange);
+}
+.orders-page .cancel-reason-option.selected {
+  border-color: var(--primary-orange);
+  background: #fff1eb;
+  color: #f54900;
+  font-weight: 600;
+}
+.orders-page .cancel-reason-note {
+  width: 100%;
+  resize: vertical;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--primary-border);
+  background: var(--third-background);
+  color: var(--primary-text);
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 12px;
+}
+.orders-page .cancel-reason-error {
+  color: #e7000b;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+.orders-page .cancel-reason-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.orders-page .cancel-reason-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: none;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.orders-page .cancel-reason-close-btn {
+  background: var(--third-background);
+  color: var(--primary-text);
+  border: 1px solid var(--primary-border) !important;
+}
+.orders-page .cancel-reason-close-btn:hover {
+  background: var(--primary-hover);
+}
+.orders-page .cancel-reason-confirm-btn {
+  background: #e7000b;
+  color: white;
+}
+.orders-page .cancel-reason-confirm-btn:hover {
+  background: #c40009;
+}
+.orders-page .cancel-reason-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .orders-page .order-item-img {
   width: 32px;
   height: 32px;

@@ -2627,11 +2627,24 @@ exports.createOrder = async (req, res) => {
       .json({ message: m.general.serverError, error: error.message });
   }
 };
+// v4.4 — الأسباب المسموحة لإلغاء المستخدم تحديدًا (مجموعة جزئية من enum
+// الكامل المشترك بـ Order.js — راجع RESTAURANT_CANCEL_REASON_CODES
+// بـ restaurant.socket.js للمقابل عند المطعم). هون السبب اختياري وليس
+// إجباري (بعكس المطعم) لأن هاد endpoint يستخدمه تطبيق المستخدم (فلاتر)
+// مباشرة، وفرضه إجباري بالباك اند بيكسر أي نسخة تطبيق حالية لسا ما
+// حدّثت واجهتها لترسل سبب — راجع مبدأ "Backend-layer-only constraint"
+const USER_CANCEL_REASON_CODES = [
+  "changed_mind",
+  "ordered_by_mistake",
+  "taking_too_long",
+  "other",
+];
+
 exports.cancelOrderFromUser = async (req, res) => {
   const m = getMessages(req).user;
   try {
     const userId = req.user._id ?? req.user.id;
-    const { orderId } = req.body;
+    const { orderId, reasonCode, reasonNote } = req.body;
 
     if (!orderId) {
       return res.status(400).json({ message: m.order.orderIdRequired });
@@ -2657,7 +2670,22 @@ exports.cancelOrderFromUser = async (req, res) => {
       });
     }
 
+    // v4.4 — نسخة عن الحالة قبل الإلغاء، دائمًا (ما بتحتاج أي إدخال من
+    // العميل، فما في خطر كسر أي نسخة تطبيق قديمة)
+    const previousStatus = order.orderStatus;
+
     order.orderStatus = "cancelled";
+    order.cancelledBy = "user";
+    order.cancelledFromStatus = previousStatus;
+
+    // السبب اختياري: لو التطبيق أرسل قيمة صالحة نسجّلها، وإلا نتجاهلها
+    // بصمت بدل ما نرفض عملية الإلغاء بسببها (راجع الشرح فوق)
+    if (reasonCode && USER_CANCEL_REASON_CODES.includes(reasonCode)) {
+      order.cancellationReasonCode = reasonCode;
+      if (reasonNote?.trim()) {
+        order.cancellationReasonNote = reasonNote.trim();
+      }
+    }
 
     // إذا كان أوردر ألماني مدفوع → Refund تلقائي
     if (

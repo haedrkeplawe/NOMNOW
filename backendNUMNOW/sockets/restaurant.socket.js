@@ -17,6 +17,18 @@ const {
 // v3.5
 const { notifyUserOrderStatus } = require("./services/notification.service");
 
+// v4.4 — الأسباب المسموحة لإلغاء/رفض الطلب من طرف المطعم تحديدًا (مجموعة
+// جزئية من enum الكامل المشترك بـ Order.js — الأسباب الأخرى مخصصة لإلغاء
+// المستخدم عبر user_controller.js)
+const RESTAURANT_CANCEL_REASON_CODES = [
+  "item_unavailable",
+  "kitchen_overloaded",
+  "closing_soon",
+  "no_driver_found",
+  "invalid_order_info",
+  "other",
+];
+
 module.exports = (io, restaurantNS) => {
   restaurantNS.on("connection", (socket) => {
     const restaurantId = socket.userId;
@@ -27,7 +39,7 @@ module.exports = (io, restaurantNS) => {
 
     socket.on("order:updateStatus", async (data) => {
       try {
-        const { orderId, status } = data;
+        const { orderId, status, reasonCode, reasonNote } = data;
 
         if (!orderId) {
           return socket.emit("order:error", { message: m.orderIdRequired });
@@ -62,6 +74,31 @@ module.exports = (io, restaurantNS) => {
           });
         }
 
+        // v4.4 — سبب الإلغاء إجباري على المطعم دائمًا (راجع النقاش:
+        // سبب الإلغاء + التمييز بين "رفض" و"إلغاء"). بيحدث هون قبل أي
+        // تعديل على الطلب حتى ما نلمس شي لو التحقق فشل
+        if (status === "cancelled") {
+          if (!reasonCode) {
+            return socket.emit("order:error", {
+              message: m.cancellationReasonRequired,
+            });
+          }
+          if (!RESTAURANT_CANCEL_REASON_CODES.includes(reasonCode)) {
+            return socket.emit("order:error", {
+              message: m.invalidCancellationReason,
+            });
+          }
+          if (reasonCode === "other" && !reasonNote?.trim()) {
+            return socket.emit("order:error", {
+              message: m.cancellationNoteRequired,
+            });
+          }
+        }
+
+        // v4.4 — نسخة عن الحالة قبل الإلغاء (pending = رفض، غيرها =
+        // إلغاء بعد القبول) — لازم قبل أي إعادة تعيين لـ order.orderStatus
+        const previousStatus = order.orderStatus;
+
         order.orderStatus = status;
 
         // v4.1 — إصلاح ثغرة بآلية الاستعادة (نقطة 8): لو السيرفر وقع
@@ -78,18 +115,25 @@ module.exports = (io, restaurantNS) => {
         }
 
         // إذا المطعم رفض وكان مدفوعاً → Refund تلقائي
-        if (
-          status === "cancelled" &&
-          order.paymentDetails?.paymentIntentId &&
-          order.paymentStatus === "paid"
-        ) {
-          try {
-            await stripe.refunds.create({
-              payment_intent: order.paymentDetails.paymentIntentId,
-            });
-            order.paymentStatus = "refunded";
-          } catch (refundErr) {
-            console.error("Refund failed:", refundErr.message);
+        if (status === "cancelled") {
+          // v4.4
+          order.cancelledBy = "restaurant";
+          order.cancelledFromStatus = previousStatus;
+          order.cancellationReasonCode = reasonCode;
+          order.cancellationReasonNote = reasonNote?.trim() || null;
+
+          if (
+            order.paymentDetails?.paymentIntentId &&
+            order.paymentStatus === "paid"
+          ) {
+            try {
+              await stripe.refunds.create({
+                payment_intent: order.paymentDetails.paymentIntentId,
+              });
+              order.paymentStatus = "refunded";
+            } catch (refundErr) {
+              console.error("Refund failed:", refundErr.message);
+            }
           }
         }
 

@@ -522,6 +522,10 @@ translations.en.socket = {
     cannotChangeStatus: "Cannot change status: order is already {{status}}",
     searchingDriver: "Searching for a driver",
     notSearchable: "Order is not in a searchable state",
+    // v4.4
+    cancellationReasonRequired: "A cancellation reason is required",
+    invalidCancellationReason: "Invalid cancellation reason",
+    cancellationNoteRequired: "Please describe the reason",
   },
 };
 
@@ -558,6 +562,10 @@ translations.ar.socket = {
     cannotChangeStatus: "لا يمكن تغيير الحالة: الطلب بالفعل في حالة {{status}}",
     searchingDriver: "جارٍ البحث عن سائق",
     notSearchable: "الطلب ليس في حالة قابلة للبحث",
+    // v4.4
+    cancellationReasonRequired: "سبب الإلغاء مطلوب",
+    invalidCancellationReason: "سبب إلغاء غير صالح",
+    cancellationNoteRequired: "يرجى كتابة السبب",
   },
 };
 
@@ -598,6 +606,10 @@ translations.de.socket = {
       "Status kann nicht geändert werden: Bestellung ist bereits {{status}}",
     searchingDriver: "Suche nach einem Fahrer",
     notSearchable: "Bestellung befindet sich nicht in einem suchbaren Zustand",
+    // v4.4
+    cancellationReasonRequired: "Ein Stornierungsgrund ist erforderlich",
+    invalidCancellationReason: "Ungültiger Stornierungsgrund",
+    cancellationNoteRequired: "Bitte beschreibe den Grund",
   },
 };
 
