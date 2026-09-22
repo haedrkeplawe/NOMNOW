@@ -951,20 +951,40 @@ exports.cancelOrderByAdmin = async (req, res) => {
     // ما في شي أصلاً يحتاج تنظيف (راجع stopActiveSearch بـ order.service.js)
     await stopActiveSearch(io, order._id);
 
+    // v4.6.3 — لازم نجيب نسخة طازجة بعد stopActiveSearch، مش نكمل نشتغل
+    // على متغيّر order القديم: تلك الدالة بتعدّل driverSearchStatus/
+    // pendingDriverIds بعملية DB منفصلة تمامًا عن order.save() فوق، فلو
+    // بعتنا order القديم متل ما هو، كان رح يوصل المطعم بـ
+    // driverSearchStatus قديمة (مثلاً "searching")، وترجع بالضبط نفس
+    // مشكلة بانر "جارِ البحث" العالق يلي صلّحناها بأول نقطة من هالورشة
+    // — بس هالمرة عبر مسار إلغاء الأدمن.
+    const freshOrder = await Order.findById(order._id)
+      .populate("userId", "name phone gender")
+      .populate(
+        "restaurantId",
+        "name phone address location currency country rating",
+      )
+      .populate(
+        "driverId",
+        "name phone vehicletype vehicleplate rating currentLocation availability",
+      );
+
     // إشعار المطعم (نفس شكل الحدث اللي order:updateStatus بيبعته)
     io.of("/restaurant")
-      .to(order.restaurantId.toString())
-      .emit("order:updated", { order });
+      .to(freshOrder.restaurantId._id.toString())
+      .emit("order:updated", { order: freshOrder });
 
     // إشعار اليوزر — Socket حي + Push (السبب متضمّن تلقائيًا بنص
     // الإشعار، راجع notification.service.js)
-    io.of("/user").to(order.userId.toString()).emit("order:statusUpdated", {
-      orderId: order._id,
-      orderNumber: order.orderNumber,
-      status: "cancelled",
-    });
-    notifyUserOrderStatus(order.userId, "cancelled", order).catch((err) =>
-      console.error("Admin-cancel push notification error:", err),
+    io.of("/user")
+      .to(freshOrder.userId._id.toString())
+      .emit("order:statusUpdated", {
+        orderId: freshOrder._id,
+        orderNumber: freshOrder.orderNumber,
+        status: "cancelled",
+      });
+    notifyUserOrderStatus(freshOrder.userId._id, "cancelled", freshOrder).catch(
+      (err) => console.error("Admin-cancel push notification error:", err),
     );
 
     // v4.6 — جديد: إشعار السائق فقط لو كان معيّن فعلاً على الطلب (حالة
@@ -977,32 +997,29 @@ exports.cancelOrderByAdmin = async (req, res) => {
       // نصفّرها هون صراحة من طرف الباك اند — بغض النظر إذا تطبيق فلاتر
       // عالج order:cancelledByAdmin أو لأ، حتى السائق يرجع "قابل
       // للحجز" فورًا بدل ما يضل معلّق بصمت وما حدا يقدر يوصله طلب جديد.
-      await Driver.findByIdAndUpdate(order.driverId, {
+      await Driver.findByIdAndUpdate(freshOrder.driverId._id, {
         availability: "online",
       });
 
+      // v4.6.2 — بث driver:currentStatus كمان: حدث موجود أصلاً وتطبيق
+      // فلاتر بيستمع له بالفعل (نفس المستخدم بمسارات goOnline/goOffline/
+      // order:delivered بـ driver.socket.js) — هيك واجهة السائق نفسها
+      // (مثلاً مفتاح Online/Offline) بتتحدث فورًا بدون أي شغل إضافي
+      // مطلوب من فريق فلاتر، حتى لو ما عالجوا order:cancelledByAdmin بعد
       io.of("/driver")
-        .to(order.driverId.toString())
+        .to(freshOrder.driverId._id.toString())
+        .emit("driver:currentStatus", { availability: "online" });
+
+      io.of("/driver")
+        .to(freshOrder.driverId._id.toString())
         .emit("order:cancelledByAdmin", {
-          orderId: order._id,
-          orderNumber: order.orderNumber,
+          orderId: freshOrder._id,
+          orderNumber: freshOrder.orderNumber,
           message: "This order was cancelled by NomNow support.",
         });
     }
 
-    // نفس شكل populate يلي getOrderFullDetails بيرجعه، حتى الواجهة تقدر
-    // تحدّث المودال بمكانه مباشرة من غير ما تفقد بيانات الأطراف الثلاثة
-    await order.populate("userId", "name phone gender");
-    await order.populate(
-      "restaurantId",
-      "name phone address location currency country rating",
-    );
-    await order.populate(
-      "driverId",
-      "name phone vehicletype vehicleplate rating currentLocation availability",
-    );
-
-    res.status(200).json({ success: true, order });
+    res.status(200).json({ success: true, order: freshOrder });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });
