@@ -971,6 +971,16 @@ exports.cancelOrderByAdmin = async (req, res) => {
     // ما كانت ممكنة قبل هالتحديث، لأن المطعم/المستخدم ما يقدروا يلغوا
     // بعد تعيين سائق). يلمس تطبيق فلاتر — راجع ملف الشرح المرفق.
     if (hadAssignedDriver) {
+      // v4.6.1 — إصلاح: السائق كان بيضل عالق على "busy" للأبد، لأنه
+      // الوحيد اللي بيرجعها "online" هو مسار order:delivered الطبيعي
+      // (driver.socket.js)، وهون قطعنا الطلب قبل ما يوصله أصلاً. لازم
+      // نصفّرها هون صراحة من طرف الباك اند — بغض النظر إذا تطبيق فلاتر
+      // عالج order:cancelledByAdmin أو لأ، حتى السائق يرجع "قابل
+      // للحجز" فورًا بدل ما يضل معلّق بصمت وما حدا يقدر يوصله طلب جديد.
+      await Driver.findByIdAndUpdate(order.driverId, {
+        availability: "online",
+      });
+
       io.of("/driver")
         .to(order.driverId.toString())
         .emit("order:cancelledByAdmin", {
