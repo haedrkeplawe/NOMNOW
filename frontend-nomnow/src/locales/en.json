@@ -426,6 +426,15 @@
     "restaurantStatus": "Restaurant Status",
     "currentlyStatus": "Your restaurant is currently {{status}} for orders",
     "turnOff": "Turn off to stop accepting orders",
-    "turnOn": "Turn on to start accepting orders"
+    "turnOn": "Turn on to start accepting orders",
+    "displayHoursTitle": "Displayed Working Hours",
+    "displayHoursSubtitle": "Shown to customers only — does not affect whether you can receive orders",
+    "open24": "Open 24 hours",
+    "openTime": "Opening time",
+    "closeTime": "Closing time",
+    "saveHours": "Save",
+    "saving": "Saving...",
+    "saved": "Saved ✓",
+    "displayHoursSaveError": "Failed to save working hours"
   }
 }

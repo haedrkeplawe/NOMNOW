@@ -107,3 +107,123 @@
   margin-top: 10px;
   align-items: center;
 }
+
+/* v4.7 — كرت عرض ساعات العمل (Display-only) */
+.warking-hours-page .display-hours-card {
+  margin-top: 20px;
+  padding: 24px;
+  border-radius: 14px;
+  background: var(--primary-background);
+  border: 1px solid var(--primary-border);
+}
+.warking-hours-page .display-hours-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+.warking-hours-page .display-hours-card__head svg {
+  color: var(--primary-orange);
+  flex-shrink: 0;
+}
+.warking-hours-page .display-hours-card__head h3 {
+  font-size: 17px;
+  font-weight: 500;
+  color: var(--primary-text);
+}
+.warking-hours-page .display-hours-card__head p {
+  font-size: 13px;
+  color: #837f7f;
+  margin-top: 2px;
+}
+
+.warking-hours-page .display-hours-card__24 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--background-color);
+  margin-bottom: 16px;
+}
+.warking-hours-page .display-hours-card__24 span {
+  font-size: 14px;
+  color: var(--primary-text);
+  font-weight: 500;
+}
+
+.warking-hours-page .display-hours-card .toggle.small {
+  width: 46px;
+  height: 26px;
+  border-radius: 20px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 3px;
+  transition: 0.3s;
+}
+.warking-hours-page .display-hours-card .toggle.small.on {
+  background: var(--primary-orange);
+}
+.warking-hours-page .display-hours-card .toggle.small.off {
+  background: #00000033;
+}
+.warking-hours-page .display-hours-card .toggle.small .circle {
+  width: 20px;
+  height: 20px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.warking-hours-page .display-hours-card .toggle.small.on .circle {
+  transform: translateX(20px);
+}
+.warking-hours-page .display-hours-card .toggle.small.off .circle {
+  transform: translateX(0);
+}
+
+.warking-hours-page .display-hours-card__times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+.warking-hours-page .display-hours-card__times label {
+  display: block;
+  font-size: 13px;
+  color: #837f7f;
+  margin-bottom: 6px;
+}
+.warking-hours-page .display-hours-card__times input[type="time"] {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--primary-border);
+  background: var(--background-color);
+  color: var(--primary-text);
+  font-size: 14px;
+}
+
+.warking-hours-page .display-hours-card__error {
+  color: #e7000b;
+  font-size: 13px;
+  margin-bottom: 12px;
+}
+
+.warking-hours-page .display-hours-card__save {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  background: var(--primary-orange-gradient);
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: 0.2s;
+}
+.warking-hours-page .display-hours-card__save:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

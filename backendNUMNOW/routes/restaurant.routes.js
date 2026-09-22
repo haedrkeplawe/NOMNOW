@@ -87,6 +87,13 @@ router.patch(
   restaurantController.toggleRestaurantStatus,
 );
 
+// v4.7 — ساعات عمل للعرض فقط (راجع النقاش الكامل)
+router.patch(
+  "/display-hours",
+  authMiddleware,
+  restaurantController.updateDisplayWorkingHours,
+);
+
 // financial overview
 router.get(
   "/financial/overview",

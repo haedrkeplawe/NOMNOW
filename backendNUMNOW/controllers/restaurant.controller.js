@@ -879,6 +879,57 @@ exports.toggleRestaurantStatus = async (req, res) => {
   }
 };
 
+// v4.7 — ساعات عمل للعرض فقط (لا علاقة لها بـ status/toggle-status فوق
+// إطلاقًا — راجع تعليق الحقل بـ models/restaurant.js). نفس صفحة
+// "ساعات العمل" بالمطعم (WarkingHoursStatus.jsx).
+exports.updateDisplayWorkingHours = async (req, res) => {
+  try {
+    const m = getMessages(req);
+    const restaurantId = req.user.restaurantId;
+    const { is24Hours, openTime, closeTime } = req.body;
+
+    const restaurant = await Restaurant.findById(restaurantId);
+    if (!restaurant)
+      return res.status(404).json({ message: m.restaurant.notFound });
+
+    const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    if (is24Hours) {
+      restaurant.displayWorkingHours = {
+        is24Hours: true,
+        openTime: null,
+        closeTime: null,
+      };
+    } else {
+      if (
+        !openTime ||
+        !closeTime ||
+        !timePattern.test(openTime) ||
+        !timePattern.test(closeTime)
+      ) {
+        return res
+          .status(400)
+          .json({ message: m.restaurant.invalidWorkingHours });
+      }
+      restaurant.displayWorkingHours = {
+        is24Hours: false,
+        openTime,
+        closeTime,
+      };
+    }
+
+    await restaurant.save();
+
+    res.json({
+      message: m.restaurant.workingHoursUpdated,
+      displayWorkingHours: restaurant.displayWorkingHours,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: getMessages(req).general.serverError });
+  }
+};
+
 // reaing
 exports.rateInRestaurant = async (req, res) => {
   try {

@@ -426,6 +426,15 @@
     "restaurantStatus": "Restaurantstatus",
     "currentlyStatus": "Ihr Restaurant ist derzeit {{status}} für Bestellungen",
     "turnOff": "Ausschalten, um keine Bestellungen mehr anzunehmen",
-    "turnOn": "Einschalten, um Bestellungen anzunehmen"
+    "turnOn": "Einschalten, um Bestellungen anzunehmen",
+    "displayHoursTitle": "Angezeigte Öffnungszeiten",
+    "displayHoursSubtitle": "Wird nur Kunden angezeigt — hat keinen Einfluss darauf, ob du Bestellungen erhalten kannst",
+    "open24": "24 Stunden geöffnet",
+    "openTime": "Öffnungszeit",
+    "closeTime": "Schließzeit",
+    "saveHours": "Speichern",
+    "saving": "Wird gespeichert...",
+    "saved": "Gespeichert ✓",
+    "displayHoursSaveError": "Öffnungszeiten konnten nicht gespeichert werden"
   }
 }

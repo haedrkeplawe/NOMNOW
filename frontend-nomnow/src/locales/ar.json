@@ -426,6 +426,15 @@
     "restaurantStatus": "حالة المطعم",
     "currentlyStatus": "مطعمك حالياً {{status}} لاستقبال الطلبات",
     "turnOff": "أوقف لإيقاف استقبال الطلبات",
-    "turnOn": "شغّل لبدء استقبال الطلبات"
+    "turnOn": "شغّل لبدء استقبال الطلبات",
+    "displayHoursTitle": "ساعات العمل المعروضة",
+    "displayHoursSubtitle": "تظهر للزبائن فقط — لا تؤثر على قدرتك على استقبال الطلبات",
+    "open24": "مفتوح 24 ساعة",
+    "openTime": "وقت الفتح",
+    "closeTime": "وقت الإغلاق",
+    "saveHours": "حفظ",
+    "saving": "جارٍ الحفظ...",
+    "saved": "تم الحفظ ✓",
+    "displayHoursSaveError": "فشل حفظ ساعات العمل"
   }
 }

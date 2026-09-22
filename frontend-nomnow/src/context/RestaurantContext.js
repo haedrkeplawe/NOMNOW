@@ -244,12 +244,23 @@ export const RestaurantProvider = ({ children }) => {
     setRestaurant((prev) => ({ ...prev, status: res.data.status }));
   };
 
+  // v4.7 — راجع النقاش الكامل: عرض ساعات العمل
+  const updateDisplayWorkingHours = async (payload) => {
+    const res = await api.patch("/restaurant/display-hours", payload);
+    setRestaurant((prev) => ({
+      ...prev,
+      displayWorkingHours: res.data.displayWorkingHours,
+    }));
+    return res.data.displayWorkingHours;
+  };
+
   return (
     <RestaurantContext.Provider
       value={{
         restaurant,
         loading,
         toggleStatus,
+        updateDisplayWorkingHours,
         newOrders,
         setNewOrders,
         orders,

@@ -30,6 +30,17 @@ const fmt = (n, currency = "SYP") =>
     maximumFractionDigits: 2,
   })}`;
 
+// v4.7 — تنسيق ساعات العمل المعروضة (للإشراف فقط — راجع النقاش الكامل:
+// عرض ساعات العمل). لا علاقة لها بحالة open/closed الفعلية.
+const formatDisplayHours = (hours) => {
+  if (!hours) return "Not set";
+  if (hours.is24Hours) return "Open 24 hours";
+  if (hours.openTime && hours.closeTime) {
+    return `${hours.openTime} – ${hours.closeTime}`;
+  }
+  return "Not set";
+};
+
 // ─── Financial Mini Card ──────────────────────────────────────
 const FinMiniCard = ({
   label,
@@ -281,6 +292,20 @@ const Details = ({
                       <h4>
                         {restaurantChossen.address.country} —{" "}
                         {restaurantChossen.address.city}
+                      </h4>
+                    </div>
+                  </div>
+
+                  {/* v4.7 — للإشراف فقط، ما تتحكم فعلياً بقدرة المطعم
+                      استقبال طلبات (راجع status فوق لهاد الغرض) */}
+                  <div className="info">
+                    <FiClock className="icon" />
+                    <div>
+                      <p>Displayed Working Hours</p>
+                      <h4>
+                        {formatDisplayHours(
+                          restaurantChossen.displayWorkingHours,
+                        )}
                       </h4>
                     </div>
                   </div>

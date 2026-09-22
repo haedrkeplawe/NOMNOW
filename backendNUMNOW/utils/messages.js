@@ -67,6 +67,9 @@ const translations = {
       blocked: "Restaurant is blocked and cannot change status",
       serverError: "Server error",
       invalidRestaurantId: "Invalid restaurantId",
+      // v4.7
+      invalidWorkingHours: "Please provide a valid opening and closing time",
+      workingHoursUpdated: "Working hours updated",
     },
 
     // ── Orders ────────────────────────────────────────────────
@@ -160,6 +163,9 @@ const translations = {
       blocked: "المطعم محظور ولا يمكن تغيير حالته",
       serverError: "خطأ في الخادم",
       invalidRestaurantId: "معرّف المطعم غير صالح",
+      // v4.7
+      invalidWorkingHours: "يرجى إدخال وقت فتح وإغلاق صحيحين",
+      workingHoursUpdated: "تم تحديث ساعات العمل",
     },
 
     order: {
@@ -252,6 +258,10 @@ const translations = {
       blocked: "Restaurant ist gesperrt und kann den Status nicht ändern",
       serverError: "Serverfehler",
       invalidRestaurantId: "Ungültige Restaurant-ID",
+      // v4.7
+      invalidWorkingHours:
+        "Bitte gib eine gültige Öffnungs- und Schließzeit an",
+      workingHoursUpdated: "Öffnungszeiten aktualisiert",
     },
 
     order: {

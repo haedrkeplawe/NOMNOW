@@ -82,6 +82,15 @@ const restaurantSchema = new mongoose.Schema(
       default: "",
     },
 
+    // v4.7 — ساعات عمل للعرض فقط (لا تتحكم فعليًا بقبول الطلبات — هاد
+    // دور "status" فوق لوحده). هدفها إعلام الزبون بالوقت المتوقع لعمل
+    // المطعم. راجع النقاش الكامل: عرض ساعات العمل.
+    displayWorkingHours: {
+      is24Hours: { type: Boolean, default: false },
+      openTime: { type: String, default: null }, // "HH:mm", مثل "08:00"
+      closeTime: { type: String, default: null }, // "HH:mm", مثل "22:00"
+    },
+
     country: {
       type: String,
       enum: ["SY", "DE"],
