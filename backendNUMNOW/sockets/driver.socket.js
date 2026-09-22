@@ -6,6 +6,11 @@ const _ = require("lodash");
 const { getSocketMessages } = require("../utils/messages");
 // v4.2 — سياسة "أجر السائق الحقيقي" موحّدة، راجع utils/driverEarningOf.js
 const { driverEarningOf } = require("../utils/driverEarningOf");
+// v4.10 — إعادة حساب تقدير وقت الوصول بموقع السائق الحقيقي عند التعيين،
+// وبس المسافة المتبقية لحظة "طلع بالتوصيل" (راجع utils/eta.js)
+const { distanceKm } = require("../utils/distance");
+const { estimateAtDriverAssigned, estimateOnTheWay } = require("../utils/eta");
+const PlatformSettings = require("../models/platformSettings");
 // v4.1
 const {
   startSearchRound,
@@ -214,10 +219,10 @@ module.exports = (io, driverNS) => {
 
         const [order, driver] = await Promise.all([
           Order.findById(orderId).select(
-            "driverId restaurantId totalPrice orderNumber orderStatus",
+            "driverId restaurantId totalPrice orderNumber orderStatus items deliveryDistanceKm statusTimestamps",
           ),
           Driver.findById(driverId).select(
-            "country cashCreditLimit cashCollected availability",
+            "country cashCreditLimit cashCollected availability currentLocation",
           ),
         ]);
 
@@ -250,7 +255,7 @@ module.exports = (io, driverNS) => {
         }
 
         const restaurant = await Restaurant.findById(order.restaurantId).select(
-          "country",
+          "country location",
         );
 
         if (restaurant.country !== driver.country) {
@@ -269,6 +274,29 @@ module.exports = (io, driverNS) => {
           }
         }
 
+        // v4.10 — إعادة حساب تقدير وقت الوصول (المرحلة 2/3): موقع السائق
+        // الحقيقي بدل زمن التنسيق الافتراضي المستخدم بالتقدير الأولي.
+        // منحسبها قبل العملية الذرية تحت (كل المدخلات هون read-only —
+        // items/deliveryDistanceKm/statusTimestamps ما إلها علاقة بسباق
+        // "مين ياخد الطلب"، فحسابها هون آمن 100%)
+        const etaSettings = await PlatformSettings.getSingleton();
+        const driverToRestaurantKm =
+          driver.currentLocation?.coordinates &&
+          restaurant.location?.coordinates
+            ? distanceKm(
+                driver.currentLocation.coordinates,
+                restaurant.location.coordinates,
+              )
+            : null;
+        const newEstimatedDeliveryAt = estimateAtDriverAssigned({
+          items: order.items,
+          acceptedAt: order.statusTimestamps?.acceptedAt,
+          readyAt: order.statusTimestamps?.readyAt,
+          driverToRestaurantKm,
+          deliveryDistanceKm: order.deliveryDistanceKm,
+          avgSpeedKmh: etaSettings.avgDriverSpeedKmh,
+        });
+
         // v4.1 — إصلاح 3: بدل قراءة-ثم-حفظ العادية (يلي فيها احتمال
         // يصير سائقين ياخدوا نفس الطلب لو ضغطوا قبول بنفس اللحظة تقريبًا)،
         // منستخدم عملية ذرية وحدة: الشرط driverId:null بيضمن إنو لو حدا
@@ -282,6 +310,8 @@ module.exports = (io, driverNS) => {
               orderStatus: "picked_up",
               driverSearchStatus: "assigned",
               pendingDriverIds: [],
+              "statusTimestamps.pickedUpAt": new Date(),
+              estimatedDeliveryAt: newEstimatedDeliveryAt,
             },
           },
           { new: true },
@@ -303,7 +333,7 @@ module.exports = (io, driverNS) => {
             // نستثنيها هون لأن هالكائن بيتبعث مباشرة لسوكيت السائق
             // (وللمستخدم/المطعم كمان بنفس الحدث)
             .select(
-              "-originalItemsPrice -promotionDiscount -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
+              "-originalItemsPrice -promotionDiscount -statusTimestamps -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
             )
             .populate("userId", "name phone")
             .populate("restaurantId", "name location")
@@ -327,6 +357,8 @@ module.exports = (io, driverNS) => {
             orderNumber: populatedOrder.orderNumber,
             status: populatedOrder.orderStatus,
             driver: { id: driverId },
+            // v4.10 — التقدير المُعاد حسابه (المرحلة 2/3) بموقع السائق الحقيقي
+            estimatedDeliveryAt: populatedOrder.estimatedDeliveryAt,
           });
 
         // v3.5
@@ -360,7 +392,7 @@ module.exports = (io, driverNS) => {
         }
 
         const order = await Order.findOne({ _id: orderId, driverId }).select(
-          "orderStatus userId restaurantId orderNumber",
+          "orderStatus userId restaurantId orderNumber deliveryDistanceKm",
         );
 
         if (!order) {
@@ -372,13 +404,23 @@ module.exports = (io, driverNS) => {
         }
 
         order.orderStatus = "on_the_way";
+        order.statusTimestamps.onTheWayAt = new Date();
+
+        // v4.10 — إعادة حساب أخيرة وأدق (المرحلة 3/3): بس الطريق المتبقي
+        // للزبون، starting من هالثانية بالضبط (راجع utils/eta.js)
+        const etaSettings = await PlatformSettings.getSingleton();
+        order.estimatedDeliveryAt = estimateOnTheWay({
+          deliveryDistanceKm: order.deliveryDistanceKm,
+          avgSpeedKmh: etaSettings.avgDriverSpeedKmh,
+        });
+
         await order.save();
 
         const populatedOrder = await Order.findById(order._id)
           // v4.0 — حماية احترازية: استثناء الحقلين الداخليين حتى لو
           // تغيّر مين بيستقبل هالحدث بالمستقبل
           .select(
-            "-originalItemsPrice -promotionDiscount -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
+            "-originalItemsPrice -promotionDiscount -statusTimestamps -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
           )
           .populate("userId", "name phone")
           .populate("driverId", "name phone vehicletype vehicleplate rating")
@@ -388,12 +430,14 @@ module.exports = (io, driverNS) => {
           orderId: order._id,
           orderNumber: order.orderNumber,
           status: "on_the_way",
+          estimatedDeliveryAt: order.estimatedDeliveryAt,
         });
 
         io.of("/user").to(order.userId.toString()).emit("order:statusUpdated", {
           orderId: order._id,
           orderNumber: order.orderNumber,
           status: "on_the_way",
+          estimatedDeliveryAt: order.estimatedDeliveryAt,
         });
 
         // v3.5
@@ -457,7 +501,7 @@ module.exports = (io, driverNS) => {
         const populatedOrder = await Order.findById(order._id)
           // v4.0 — حماية احترازية: استثناء الحقلين الداخليين
           .select(
-            "-originalItemsPrice -promotionDiscount -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
+            "-originalItemsPrice -promotionDiscount -statusTimestamps -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
           )
           .populate("userId", "name phone")
           .populate("driverId", "name phone vehicletype vehicleplate rating");

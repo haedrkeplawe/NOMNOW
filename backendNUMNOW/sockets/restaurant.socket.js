@@ -101,6 +101,17 @@ module.exports = (io, restaurantNS) => {
 
         order.orderStatus = status;
 
+        // v4.10 — تسجيل وقت الانتقال الفعلي (داخلي — أساس تقدير وقت
+        // الوصول وأي تحسين مستقبلي مبني على بيانات حقيقية). ما منلمس
+        // أي حالة تانية غير هالثلاث — الإلغاء ما إله علاقة بالتقدير
+        if (status === "accepted") {
+          order.statusTimestamps.acceptedAt = new Date();
+        } else if (status === "preparing") {
+          order.statusTimestamps.preparingAt = new Date();
+        } else if (status === "ready") {
+          order.statusTimestamps.readyAt = new Date();
+        }
+
         // v4.1 — إصلاح ثغرة بآلية الاستعادة (نقطة 8): لو السيرفر وقع
         // بالضبط بين لحظة "المطعم قبل" ولحظة "أول جولة بحث كملت"، الطلب
         // كان رح يضل عالق (orderStatus: accepted لكن driverSearchStatus
@@ -161,6 +172,11 @@ module.exports = (io, restaurantNS) => {
             orderId: order._id,
             orderNumber: order.orderNumber,
             status: order.orderStatus,
+            // v4.10 — نفس القيمة الحالية بالطلب (ما بتتغيّر بهالمرحلة —
+            // إعادة الحساب بتصير بس لحظة تعيين سائق فعلي و"طلع بالتوصيل"،
+            // راجع driver.socket.js) — منبعتها بكل حدث status عشان يضل
+            // شكل الحدث موحّد لفريق الفلتر
+            estimatedDeliveryAt: order.estimatedDeliveryAt,
             // v4.6.3 — نلحق سبب الإلغاء بالحدث الحي نفسه، بدل ما نضطر
             // تطبيق المستخدم يعيد جلب كل الطلبات بس عشان ياخد السبب.
             // مشروطة بالحالة حتى يضل شكل الحدث لباقي الحالات كما هو

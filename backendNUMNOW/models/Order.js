@@ -26,6 +26,10 @@ const orderItemSchema = new mongoose.Schema(
       },
     ],
     totalPrice: { type: Number, required: true },
+
+    // v4.10 — لقطة وقت تحضير الصنف (دقائق)، منسوخة من Cart عند إنشاء
+    // الطلب. أساس حساب estimatedDeliveryAt تحت (راجع utils/eta.js)
+    prepTimeMinutes: { type: Number, default: 0 },
   },
   { _id: false },
 );
@@ -75,11 +79,6 @@ const orderSchema = new mongoose.Schema(
     // new v2.2 — رسوم التوصيل الأصلية قبل تطبيق عرض التوصيل المجاني
     // Flutter: لا يحتاج هذا الحقل — للباك فقط
     originalDeliveryFee: { type: Number, default: null },
-    // v4.9 — المسافة (كم) بين المطعم وعنوان التوصيل وقت إنشاء الطلب
-    // (خط مستقيم Haversine — راجع utils/distance.js)، محفوظة كلقطة
-    // للمراجعة/التقارير لاحقاً. ما تتغيّر بعد الإنشاء حتى لو تعديل سعر
-    // الكيلومتر من لوحة الأدمن بعدين. Flutter: لا يحتاج هذا الحقل — للباك فقط.
-    deliveryDistanceKm: { type: Number, default: null },
     taxPrice: { type: Number, default: 0 },
     totalPrice: { type: Number, required: true },
 
@@ -253,6 +252,29 @@ const orderSchema = new mongoose.Schema(
     deliveredByDriverAt: {
       type: Date,
       default: null,
+    },
+
+    // v4.10 — تقدير وقت وصول الطلب للزبون. بيُحسب وقت تأكيد الطلب
+    // (تقريبي)، وبينحسب من جديد مرتين لاحقاً ليصير أدق: لحظة تعيين سائق
+    // فعلي (موقعه الحقيقي)، ولحظة "طلع بالتوصيل" فعلياً (بس المسافة
+    // المتبقية). راجع utils/eta.js للصيغة الكاملة.
+    estimatedDeliveryAt: {
+      type: Date,
+      default: null,
+    },
+
+    // v4.10 — وقت كل انتقال حالة فعلي (داخلي بالكامل — لحساب estimatedDeliveryAt
+    // وأساس أي تحسين مستقبلي مبني على بيانات حقيقية بدل افتراضات بس).
+    // Flutter: لا يحتاج هذا الحقل — للباك فقط.
+    statusTimestamps: {
+      acceptedAt: { type: Date, default: null },
+      preparingAt: { type: Date, default: null },
+      readyAt: { type: Date, default: null },
+      // لحظة تعيين السائق فعلياً (مش لحظة وصوله الفعلي للمطعم — راجع
+      // ملاحظة "picked_up" بـ driver.socket.js: الحالة بتنحط فوراً لحظة
+      // القبول، قبل ما يوصل فعلياً)
+      pickedUpAt: { type: Date, default: null },
+      onTheWayAt: { type: Date, default: null },
     },
 
     notes: { type: String, default: "" },

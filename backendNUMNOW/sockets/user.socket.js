@@ -16,6 +16,12 @@ const Order = require("../models/Order");
 const Cart = require("../models/Cart");
 const Promotion = require("../models/Promotion");
 const { getSocketMessages } = require("../utils/messages");
+// v4.10 — تقدير وقت وصول الطلب (المرحلة 1/3 — راجع utils/eta.js). محسوب
+// هون بالضبط (order:send)، مو بـcreateOrder، لأنو هاي اللحظة الحقيقية
+// يلي الطلب فيها بيتأكد وينبعت فعلياً للمطعم (راجع الشرح تحت عند
+// orderStatus = "pending")
+const { estimateAtCreation } = require("../utils/eta");
+const PlatformSettings = require("../models/platformSettings");
 
 const Stripe = require("stripe");
 const { HttpsProxyAgent } = require("https-proxy-agent");
@@ -145,6 +151,20 @@ module.exports = (io, userNS) => {
           order.paymentMethod = paymentMethodType;
         }
 
+        // v4.10 — التأكيد الفعلي: هاد الطلب هلق بيتحوّل "pending" وينبعت
+        // فعلياً للمطعم (order:new تحت) — هاي أول لحظة صحيحة لحساب "متى
+        // بيوصل الطلب" (المرحلة 1/3). items وdeliveryDistanceKm أصلاً
+        // محسوبين ومخزّنين على الطلب من وقت createOrder (ثابتين، ما
+        // بيتأثروا بوقت التأكيد)، بس "الوقت من الآن" لازم يُحسب هون
+        // بالضبط مو أبكر.
+        const etaSettings = await PlatformSettings.getSingleton();
+        order.estimatedDeliveryAt = estimateAtCreation({
+          items: order.items,
+          deliveryDistanceKm: order.deliveryDistanceKm,
+          avgSpeedKmh: etaSettings.avgDriverSpeedKmh,
+          bufferMinutes: etaSettings.etaCoordinationBufferMinutes,
+        });
+
         order.orderStatus = "pending";
         await order.save();
 
@@ -158,6 +178,8 @@ module.exports = (io, userNS) => {
           success: true,
           message: m.orderSent,
           orderId: order._id,
+          // v4.10 — أول تقدير حقيقي يوصل للزبون — لحظة التأكيد بالضبط
+          estimatedDeliveryAt: order.estimatedDeliveryAt,
         });
         console.log(`✅ Order ${order.orderNumber} sent to restaurant`);
       } catch (error) {
@@ -180,3 +202,4 @@ module.exports = (io, userNS) => {
     });
   });
 };
+r;

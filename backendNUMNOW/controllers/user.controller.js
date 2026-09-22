@@ -2125,6 +2125,8 @@ exports.addToCart = async (req, res) => {
         quantity,
         extras: selectedExtras,
         totalItemPrice,
+        // v4.10 — لقطة وقت التحضير (دقائق)، أساس تقدير وقت الوصول لاحقاً
+        prepTimeMinutes: food.time || 0,
       });
     }
 
@@ -2373,7 +2375,7 @@ exports.getUserOrders = async (req, res) => {
       // driverSearchExpiresAt/driverSearchAttempt حقول داخلية لآلية
       // البحث عن سائق — نستثنيها كلها حتى ما توصل لفرونت المستخدم أبداً
       .select(
-        "-originalItemsPrice -promotionDiscount -deliveryDistanceKm -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
+        "-originalItemsPrice -promotionDiscount -deliveryDistanceKm -statusTimestamps -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
       )
       .populate("restaurantId", "name image address")
       .populate("driverId", "name phone vehicletype vehicleplate rating")
@@ -2528,6 +2530,8 @@ exports.createOrder = async (req, res) => {
       quantity: item.quantity,
       extras: item.extras,
       totalPrice: item.totalItemPrice,
+      // v4.10 — لقطة وقت التحضير من السلة، أساس تقدير وقت الوصول
+      prepTimeMinutes: item.prepTimeMinutes || 0,
     }));
 
     const itemsPrice = cart.totalCartPrice;
@@ -2589,6 +2593,15 @@ exports.createOrder = async (req, res) => {
     );
     const couponDiscount = couponResult.notEligible ? 0 : couponResult.discount;
     const deliveryFee = couponResult.freeDelivery ? 0 : baseDeliveryFee;
+
+    // v4.10 — لا نحسب estimatedDeliveryAt هون. هالنقطة (createOrder) بس
+    // تنشئ الطلب بحالة "not_confirmed" — التأكيد الفعلي وإرساله للمطعم
+    // بيصير لاحقاً عبر order:send (user.socket.js)، وقد يفصل بينهم وقت
+    // حقيقي (إعادة تحقق السلة/العروض، وبمسار ألمانيا انتظار الدفع فعلياً
+    // — راجع تعليق "قد تمتد دقايق" هناك). حساب "الوقت من الآن" هون كان
+    // رح يصير غير دقيق فعلياً لحظة ما الطلب ينتقل فعلياً لـ"pending".
+    // deliveryDistanceKm/items فوق ثابتين وصحيحين من هلق، وبينخزنوا عادي
+    // — الحساب المؤجل بـorder:send بيستخدمهم مباشرة من نفس الطلب.
 
     // v4.2 — تحصين 6: هاد الحفظ لازم يسبق التقاط cartSnapshotAt (وبالتالي
     // يسبق Order.create) لا يتبعه — وإلا اللقطة تلتقط updatedAt القديم،
@@ -2693,9 +2706,13 @@ exports.createOrder = async (req, res) => {
     // عن سائق (أصلاً فاضية بهاللحظة بما إنو الطلب لسا موجّه للمطعم) —
     // منشيلها كلها من الـ response حتى يضل شكله مطابق 100% لما كان قبل.
     // v4.9 — deliveryDistanceKm أضيفت لنفس القائمة (حقل داخلي مثلها تماماً)
+    // v4.10 — statusTimestamps أيضاً (داخلي بالكامل). estimatedDeliveryAt
+    // بالمقابل تبقى بالـ response عمداً — هي بالضبط الحقل يلي الزبون
+    // محتاجه لعرض وقت الوصول
     delete responseOrder.originalItemsPrice;
     delete responseOrder.promotionDiscount;
     delete responseOrder.deliveryDistanceKm;
+    delete responseOrder.statusTimestamps;
     delete responseOrder.notifiedDriverIds;
     delete responseOrder.pendingDriverIds;
     delete responseOrder.driverSearchExpiresAt;

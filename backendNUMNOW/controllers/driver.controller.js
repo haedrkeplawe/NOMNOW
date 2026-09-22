@@ -1168,8 +1168,9 @@ exports.getActiveOrder = async (req, res) => {
       // لحساب أرباح المطعم/الأدمن، وnotifiedDriverIds/pendingDriverIds/
       // driverSearchExpiresAt/driverSearchAttempt حقول داخلية لآلية
       // البحث عن سائق — كلها نستثنيها حتى ما توصل لفرونت السائق
+      // v4.10 — statusTimestamps أيضاً (داخلي بالكامل، نفس المعاملة)
       .select(
-        "-originalItemsPrice -promotionDiscount -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
+        "-originalItemsPrice -promotionDiscount -statusTimestamps -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
       )
       .populate("userId", "name phone")
       .populate("restaurantId", "name location address");

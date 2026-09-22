@@ -86,6 +86,15 @@ const cartItemSchema = new mongoose.Schema({
     required: true,
     min: 0,
   },
+
+  // v4.10 — لقطة وقت تحضير الصنف (دقائق) وقت الإضافة للسلة، من Food.time.
+  // مستخدمة لحساب تقدير وقت وصول الطلب (راجع utils/eta.js). لقطة زي باقي
+  // حقول السلة (name/basePrice...) — ما بتتأثر لو المطعم عدّل وقت التحضير
+  // بعدين على الصنف نفسه.
+  prepTimeMinutes: {
+    type: Number,
+    default: 0,
+  },
 });
 
 /* =========================

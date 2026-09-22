@@ -14,6 +14,24 @@ const platformSettingsSchema = new mongoose.Schema(
       default: 50,
       min: 0,
     },
+
+    // v4.10 — إعدادات تقدير وقت الوصول (estimatedDeliveryAt). قابلة
+    // للتعديل من لوحة الأدمن لاحقاً بنفس أسلوب سعر الكيلومتر فوق.
+    // avgDriverSpeedKmh: متوسط سرعة السائق المفترض لتحويل المسافة لوقت
+    // (نفس الاستخدام بالرحلتين: سائق→مطعم، ومطعم→زبون)
+    avgDriverSpeedKmh: {
+      type: Number,
+      default: 25,
+      min: 1,
+    },
+    // etaCoordinationBufferMinutes: زمن ثابت يغطي قبول المطعم + بحث/تعيين
+    // سائق، يُستخدم بس بالتقدير الأولي وقت تأكيد الطلب (قبل ما يكون في
+    // سائق فعلي معروف) — راجع estimateAtCreation بـ utils/eta.js
+    etaCoordinationBufferMinutes: {
+      type: Number,
+      default: 10,
+      min: 0,
+    },
   },
   { timestamps: true },
 );
