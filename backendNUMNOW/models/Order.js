@@ -168,10 +168,15 @@ const orderSchema = new mongoose.Schema(
       ],
       default: null,
     },
-    // نص حر — إجباري لما الكود "other"، اختياري كتفصيل إضافي لغيره
+    // نص حر — إجباري لما الكود "other"، اختياري كتفصيل إضافي لغيره.
+    // v4.6.3 — سقف 300 حرف (دفاع بمستوى الموديل كمان، مش بس نقاط
+    // الدخول الثلاث) — بدون سقف، الحد الوحيد كان حد جسم الطلب لكل
+    // الـ API (express.json الافتراضي 100kb)، يعني نظريًا نص ~100 ألف
+    // حرف ممكن ينحفظ ويرجع مع كل نداء GET /api/user/order
     cancellationReasonNote: {
       type: String,
       default: null,
+      maxlength: 300,
     },
 
     paymentMethod: {

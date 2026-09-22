@@ -924,7 +924,8 @@ exports.cancelOrderByAdmin = async (req, res) => {
     order.cancelledBy = "admin";
     order.cancelledFromStatus = previousStatus;
     order.cancellationReasonCode = reasonCode;
-    order.cancellationReasonNote = reasonNote?.trim() || null;
+    // v4.6.3 — سقف طول النص الحر (راجع maxlength بـ models/Order.js)
+    order.cancellationReasonNote = reasonNote?.trim().slice(0, 300) || null;
 
     // نفس منطق الاسترداد التلقائي الموجود بمساري المطعم والمستخدم —
     // للطلبات الألمانية المدفوعة فقط (راجع النقاش: معالجة فشل الـ Refund،
@@ -976,12 +977,21 @@ exports.cancelOrderByAdmin = async (req, res) => {
 
     // إشعار اليوزر — Socket حي + Push (السبب متضمّن تلقائيًا بنص
     // الإشعار، راجع notification.service.js)
+    //
+    // v4.6.3 — لا نُرفق cancellationReasonCode/Note هون إطلاقاً: هالحدث
+    // مصدره دايماً إلغاء الأدمن (cancelledBy: "admin")، والأسباب هون
+    // حساسة وداخلية بطبيعتها (نزاع، اشتباه احتيال...) — بالضبط نفس سبب
+    // كتمها عن نص إشعار الـ Push (notification.service.js) وعن استجابة
+    // GET /api/user/order (راجع الإصلاح بـ getUserOrders). لو ضفناها
+    // هون كنا رح نسرّبها من قناة ثالثة رغم حجبها بالقناتين التانيتين.
     io.of("/user")
       .to(freshOrder.userId._id.toString())
       .emit("order:statusUpdated", {
         orderId: freshOrder._id,
         orderNumber: freshOrder.orderNumber,
         status: "cancelled",
+        cancelledBy: "admin",
+        cancelledFromStatus: freshOrder.cancelledFromStatus,
       });
     notifyUserOrderStatus(freshOrder.userId._id, "cancelled", freshOrder).catch(
       (err) => console.error("Admin-cancel push notification error:", err),

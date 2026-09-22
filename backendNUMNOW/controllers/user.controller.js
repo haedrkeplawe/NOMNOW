@@ -2372,10 +2372,25 @@ exports.getUserOrders = async (req, res) => {
       }),
     );
 
+    // v4.6.3 — إصلاح تسريب خصوصية: أسباب إلغاء الأدمن حساسة وداخلية
+    // (نزاع، اشتباه احتيال...) وتعمّدنا عدم كشفها بنص إشعار الـ Push
+    // (راجع notification.service.js) — بس نسينا نفس الكتم هون، فكانت
+    // توصل لجهاز الزبون كاملة وواضحة عبر هالـ endpoint رغم حجبها
+    // بالإشعار. لازم تتكتم بكل نقطة توصل تطبيق المستخدم، مش بس بالإشعار.
+    const safeOrders = enrichedOrders.map((order) =>
+      order.cancelledBy === "admin"
+        ? {
+            ...order,
+            cancellationReasonCode: null,
+            cancellationReasonNote: null,
+          }
+        : order,
+    );
+
     res.status(200).json({
       success: true,
-      total: enrichedOrders.length,
-      orders: enrichedOrders,
+      total: safeOrders.length,
+      orders: safeOrders,
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -2680,10 +2695,21 @@ exports.cancelOrderFromUser = async (req, res) => {
 
     // السبب اختياري: لو التطبيق أرسل قيمة صالحة نسجّلها، وإلا نتجاهلها
     // بصمت بدل ما نرفض عملية الإلغاء بسببها (راجع الشرح فوق)
+    //
+    // v4.6.3 — إصلاح: "other" بلا نص حر كان ينحفظ متل ما هو (سبب "أخرى"
+    // بلا أي تفصيل — سجل بلا فائدة). هلق نتجاهل السبب بالكامل بهالحالة
+    // (بدون رفض الإلغاء — نفس الفلسفة، ما نعطّل المستخدم بسبب خلل
+    // بالواجهة)، تماشيًا مع نفس التحقق المطبّق أصلاً على مساري المطعم
+    // والأدمن (اللي بيرفضوا الطلب من أساسه بهالحالة، بس هون الرفض مش
+    // مناسب لأنو الإلغاء نفسه ما بيصير إجباري إرفاقه بسبب).
     if (reasonCode && USER_CANCEL_REASON_CODES.includes(reasonCode)) {
-      order.cancellationReasonCode = reasonCode;
-      if (reasonNote?.trim()) {
-        order.cancellationReasonNote = reasonNote.trim();
+      // v4.6.3 — سقف طول النص الحر (راجع maxlength بـ models/Order.js)
+      const note = reasonNote?.trim().slice(0, 300);
+      if (reasonCode !== "other" || note) {
+        order.cancellationReasonCode = reasonCode;
+        if (note) {
+          order.cancellationReasonNote = note;
+        }
       }
     }
 

@@ -1,48 +1,60 @@
-// test-sms.js — اختبار مستقل لـ utils/smsProvider.js فقط
-// ⚠️ ما بيلمس أي controller ولا route ولا منطق تسجيل دخول — استدعاء مباشر بس
+// backfill-display-working-hours.js
 //
-// طريقة الاستخدام:
-//   1. حط هاد الملف بجانب smsProvider.js داخل مجلد utils/
-//   2. تأكد إن .env فيه AMAN_GATE_API_TOKEN (وباقي مفاتيح Aman Gate إذا لزم)
-//   3. شغّل من جذر المشروع:
-//        node utils/test-sms.js +963912345678
-//        node utils/test-sms.js +963912345678 ar   ← لتجربة القالب العربي
+// v4.6.3 — Migration اختيارية لمرة وحدة (راجع النقاش: ملاحظات فريق
+// فلاتر على سبب الإلغاء وساعات العمل، بند #5).
+//
+// المشكلة: مطاعم اتسجّلت قبل ميزة "عرض ساعات العمل" (v4.7) ما عندها
+// حقل displayWorkingHours بالداتابيز إطلاقاً. لما نجيبها عبر .lean()
+// أو aggregate (متل معظم مسارات المستخدم)، الحقل بيرجع غايب كليًا —
+// بعكس لما نجيبها بدون lean، وقتها Mongoose بيطبّق الـ default
+// ({is24Hours:false, openTime:null, closeTime:null}) تلقائيًا.
+// نفس الـ API فعليًا بيرجّع شكلين مختلفين حسب المسار.
+//
+// هاد Migration مش إجباري — تطبيق فلاتر عندهم معالجة دفاعية للشكلين
+// أصلاً. بس تشغيله مرة وحدة بيوحّد البيانات ويسهّل أي استعلام مباشر
+// مستقبلي على قاعدة البيانات (تقارير، أدوات إدارية...).
+//
+// التشغيل:
+//   node backfill-display-working-hours.js
+//
+// بيحتاج متغيّر البيئة MONGO_URI (أو عدّل السطر تحت مباشرة لو مختلف
+// عندك بمشروعك الأصلي).
 
-require("dotenv").config();
-const smsProvider = require("./utils/smsProvider");
+const mongoose = require("mongoose");
+const Restaurant = require("./models/restaurant");
 
-const phone = process.argv[2];
-const lang = process.argv[3] === "ar" ? "ar" : "en";
+const run = async () => {
+  const uri = process.env.MONGO_URI;
+  if (!uri) {
+    console.error("❌ MONGO_URI environment variable is not set.");
+    process.exit(1);
+  }
 
-if (!phone) {
-  console.error("❌ الاستخدام: node utils/test-sms.js +963912345678 [ar|en]");
+  await mongoose.connect(uri);
+  console.log("Connected to MongoDB.");
+
+  const result = await Restaurant.updateMany(
+    { displayWorkingHours: { $exists: false } },
+    {
+      $set: {
+        displayWorkingHours: {
+          is24Hours: false,
+          openTime: null,
+          closeTime: null,
+        },
+      },
+    },
+  );
+
+  console.log(
+    `Done. Matched: ${result.matchedCount}, Modified: ${result.modifiedCount}`,
+  );
+
+  await mongoose.disconnect();
+  process.exit(0);
+};
+
+run().catch((err) => {
+  console.error("Migration failed:", err);
   process.exit(1);
-}
-
-const testCode = Math.floor(100000 + Math.random() * 900000).toString();
-
-(async () => {
-  console.log("====================================");
-  console.log("📱 رقم الاختبار:", phone);
-  console.log("🌐 اللغة:", lang);
-  console.log("🔢 الكود التجريبي:", testCode);
-  console.log(
-    "🔑 AMAN_GATE_API_TOKEN مضبوط؟",
-    process.env.AMAN_GATE_API_TOKEN
-      ? "نعم"
-      : "لا (رح يشتغل بوضع dev/console.log فقط)",
-  );
-  console.log("====================================");
-
-  const sent = await smsProvider.send(phone, testCode, lang);
-
-  console.log("====================================");
-  console.log(
-    sent
-      ? "✅ نجح الإرسال — تحقق من هاتفك"
-      : "❌ فشل الإرسال — شوف رسائل الخطأ فوق",
-  );
-  console.log("====================================");
-
-  process.exit(sent ? 0 : 1);
-})();
+});

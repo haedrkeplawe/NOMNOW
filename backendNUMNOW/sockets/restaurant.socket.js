@@ -120,7 +120,9 @@ module.exports = (io, restaurantNS) => {
           order.cancelledBy = "restaurant";
           order.cancelledFromStatus = previousStatus;
           order.cancellationReasonCode = reasonCode;
-          order.cancellationReasonNote = reasonNote?.trim() || null;
+          // v4.6.3 — سقف طول النص الحر (راجع maxlength بـ models/Order.js)
+          order.cancellationReasonNote =
+            reasonNote?.trim().slice(0, 300) || null;
 
           if (
             order.paymentDetails?.paymentIntentId &&
@@ -159,6 +161,17 @@ module.exports = (io, restaurantNS) => {
             orderId: order._id,
             orderNumber: order.orderNumber,
             status: order.orderStatus,
+            // v4.6.3 — نلحق سبب الإلغاء بالحدث الحي نفسه، بدل ما نضطر
+            // تطبيق المستخدم يعيد جلب كل الطلبات بس عشان ياخد السبب.
+            // مشروطة بالحالة حتى يضل شكل الحدث لباقي الحالات كما هو
+            // حرفياً (additive بس). آمنة هون تحديداً بدون أي كتم لأنو
+            // هالهاندلر خاص بالمطعم فقط — cancelledBy دايماً "restaurant"
+            ...(order.orderStatus === "cancelled" && {
+              cancelledBy: order.cancelledBy,
+              cancelledFromStatus: order.cancelledFromStatus,
+              cancellationReasonCode: order.cancellationReasonCode,
+              cancellationReasonNote: order.cancellationReasonNote,
+            }),
           });
 
         // v3.5
