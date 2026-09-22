@@ -143,6 +143,9 @@ exports.resetPassword = async (req, res) => {
     user.passwordResetOtpExpire = undefined;
     // v4.2 — إلغاء أي جلسة قديمة بعد تغيير كلمة المرور (إجراء أمان قياسي)
     user.refreshToken = null;
+    // v4.8 — وتصفير نافذة سماح الـ refresh token الجديدة كمان لنفس السبب
+    user.previousRefreshToken = null;
+    user.previousRefreshTokenExpiresAt = null;
 
     await user.save();
 
@@ -162,14 +165,74 @@ exports.refreshToken = async (req, res) => {
     const decoded = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     const user = await RestaurantUser.findById(decoded.id);
 
-    if (!user || user.refreshToken !== token)
+    if (!user)
       return res.status(403).json({ message: m.auth.invalidRefreshToken });
+
+    // v4.8 — منع تجديد التوكن لمطعم صار محظور من الأدمن، وإلغاء الجلسة
+    // فعلياً بدل ما نتركها تعيش لحد نهاية صلاحية الـ refresh token (7 أيام)
+    if (user.restaurantId) {
+      const restaurant = await Restaurant.findById(user.restaurantId).select(
+        "status",
+      );
+      if (restaurant?.status === "blocked") {
+        user.refreshToken = null;
+        user.previousRefreshToken = null;
+        user.previousRefreshTokenExpiresAt = null;
+        await user.save();
+        return res.status(403).json({ message: m.auth.accountBlocked });
+      }
+    }
+
+    // v4.8 — نافذة سماح قصيرة (10 ثواني) لإعادة استخدام الـ refresh token
+    // اللي كان صالح لحظة الطلب: سباق طلبات متزامنة (مثلاً تبويبين، أو
+    // أكتر من نداء API فشل بـ401 بنفس اللحظة بعد انقطاع نت) بيبعتوا كلهن
+    // نفس التوكن "القديم" تقريباً بنفس الثانية — الطلب التاني يوصل وهو
+    // صار "سابق" توّاً بسبب rotation الطلب الأول. بدل رفضه (وهاد كان
+    // يسبب logout رغم إنو الجلسة صالحة)، منرجّعله نفس زوج التوكنات الحالي.
+    const isCurrentToken = user.refreshToken === token;
+    const isGracePeriodToken =
+      !isCurrentToken &&
+      user.previousRefreshToken === token &&
+      user.previousRefreshTokenExpiresAt &&
+      user.previousRefreshTokenExpiresAt > Date.now();
+
+    if (!isCurrentToken && !isGracePeriodToken)
+      return res.status(403).json({ message: m.auth.invalidRefreshToken });
+
+    if (isGracePeriodToken) {
+      // v4.8 — طلب "متسابق" وصل بتوكن انلغى توّاً: منرجع نفس زوج
+      // التوكنات الحالي (يلي طلّع بالطلب الأول اللي سبقه) بدون rotation
+      // جديد، حتى ما نفرّق الحالة بين الطلبين المتزامنين
+      const newAccessToken = generateAccessToken(user._id);
+      return res
+        .cookie("refreshToken", user.refreshToken, {
+          httpOnly: true,
+          sameSite: "none",
+          secure: true,
+          maxAge: 7 * 24 * 60 * 60 * 1000,
+        })
+        .json({
+          accessToken: newAccessToken,
+          refreshToken: user.refreshToken,
+          user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            img: user.img || null,
+          },
+        });
+    }
 
     // ✅ Refresh Token Rotation — نولّد access + refresh جديدَين في كل مرة
     const newAccessToken = generateAccessToken(user._id);
     const newRefreshToken = generateRefreshToken(user._id);
 
-    // نحفظ الـ refreshToken الجديد في DB ونُبطل القديم
+    // نحفظ الـ refreshToken الجديد بالـ DB، ونخلي القديم صالح لنافذة
+    // سماح قصيرة (10 ثواني) بدل ما نُبطله فوراً
+    user.previousRefreshToken = user.refreshToken;
+    user.previousRefreshTokenExpiresAt = Date.now() + 10 * 1000;
     user.refreshToken = newRefreshToken;
     await user.save();
 
@@ -214,6 +277,17 @@ exports.loginWithPhone = async (req, res) => {
     if (!isMatch)
       return res.status(400).json({ message: m.auth.invalidPassword });
 
+    // v4.8 — منع تسجيل الدخول لمطعم محظور من الأدمن (كان مفقوداً بالكامل —
+    // restaurant.status="blocked" ما كان يتحقق منه بأي مكان بمسار الدخول)
+    if (user.restaurantId) {
+      const restaurant = await Restaurant.findById(user.restaurantId).select(
+        "status",
+      );
+      if (restaurant?.status === "blocked") {
+        return res.status(403).json({ message: m.auth.accountBlocked });
+      }
+    }
+
     // v2.0 — دفاع إضافي: منع طلب OTP جديد بفارق أقل من 60 ثانية عن آخر مرة
     // (هون كانت الثغرة الأصلية: loginWithPhone كان يولّد OTP جديد بكل مرة
     // بدون أي throttle، بعكس resendOtp اللي كان عنده تحقق مشابه)
@@ -256,8 +330,27 @@ exports.verifyPhone = async (req, res) => {
     const user = await RestaurantUser.findOne({ phone });
 
     if (!user) throw new Error(m.auth.phoneNotFound);
-    if (user.phoneOtp !== otp) throw new Error(m.auth.invalidOtp);
-    if (user.phoneOtpExpire < Date.now()) throw new Error(m.auth.otpExpired);
+    // v4.8 — إصلاح ثغرة حرجة: بدون !user.phoneOtp، المقارنة
+    // "undefined !== otp" بترجع false لو otp غير موجود بالـ body أصلاً —
+    // وهاي بالضبط الحالة الطبيعية بعد أي verify ناجح (الحقل بينصفّر
+    // لـ undefined)، فكان ممكن تجاوز التحقق بالكامل بس بمعرفة الرقم.
+    // نفس نمط الحماية المستخدم أصلاً بـ resetPassword تحت
+    // (!user.passwordResetOtp ||).
+    if (!user.phoneOtp || user.phoneOtp !== otp)
+      throw new Error(m.auth.invalidOtp);
+    if (!user.phoneOtpExpire || user.phoneOtpExpire < Date.now())
+      throw new Error(m.auth.otpExpired);
+
+    // v4.8 — دفاع أخير قبل إصدار أي توكن: مطعم محظور من الأدمن ما لازم
+    // يقدر يدخل حتى لو معه كود صحيح
+    if (user.restaurantId) {
+      const restaurant = await Restaurant.findById(user.restaurantId).select(
+        "status",
+      );
+      if (restaurant?.status === "blocked") {
+        return res.status(403).json({ message: m.auth.accountBlocked });
+      }
+    }
 
     user.phoneOtp = undefined;
     user.phoneOtpExpire = undefined;
@@ -308,12 +401,39 @@ exports.loginWithEmail = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
       return res.status(400).json({ message: m.auth.invalidPassword });
+
+    // v4.8 — منع تسجيل الدخول لمطعم محظور من الأدمن (نفس فحص loginWithPhone)
+    if (user.restaurantId) {
+      const restaurant = await Restaurant.findById(user.restaurantId).select(
+        "status",
+      );
+      if (restaurant?.status === "blocked") {
+        return res.status(403).json({ message: m.auth.accountBlocked });
+      }
+    }
+
+    // v4.8 — نفس throttle الـ60 ثانية المطبّق أصلاً على loginWithPhone (v2.0)،
+    // كان مفقوداً هون بالكامل وهي بالضبط نفس فئة الثغرة اللي انصلحت للهاتف
+    if (!canSendOtp(user.emailOtpExpire)) {
+      return res.status(429).json({
+        message: m.auth.resendTooSoon,
+        retryAfterSeconds: secondsUntilNextOtp(user.emailOtpExpire),
+      });
+    }
+
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.emailOtp = otp;
     user.emailOtpExpire = Date.now() + 60 * 60 * 1000;
     await user.save();
 
-    await emailProvider.send(user.email, `Your OTP: ${otp}`);
+    // v4.8 — توحيد السلوك مع قسم الهاتف: فشل الإرسال ما بيوقف الطلب
+    // (مرحلة اختبار)، بس منسجل تحذير بدل ما يمر بصمت
+    const sent = await emailProvider.send(user.email, `Your OTP: ${otp}`);
+    if (!sent) {
+      console.warn(
+        `⚠️ Login email OTP failed for ${user.email} — continuing (test mode)`,
+      );
+    }
 
     res.status(200).json({
       message: m.auth.otpSentEmail,
@@ -330,8 +450,21 @@ exports.verifyEmail = async (req, res) => {
     const user = await RestaurantUser.findOne({ email });
 
     if (!user) throw new Error(m.auth.emailNotFound);
-    if (user.emailOtp !== otp) throw new Error(m.auth.invalidOtp);
-    if (user.emailOtpExpire < Date.now()) throw new Error(m.auth.otpExpired);
+    // v4.8 — نفس إصلاح ثغرة التجاوز الموجودة بـ verifyPhone (راجع الشرح هناك)
+    if (!user.emailOtp || user.emailOtp !== otp)
+      throw new Error(m.auth.invalidOtp);
+    if (!user.emailOtpExpire || user.emailOtpExpire < Date.now())
+      throw new Error(m.auth.otpExpired);
+
+    // v4.8 — دفاع أخير قبل إصدار أي توكن: مطعم محظور من الأدمن
+    if (user.restaurantId) {
+      const restaurant = await Restaurant.findById(user.restaurantId).select(
+        "status",
+      );
+      if (restaurant?.status === "blocked") {
+        return res.status(403).json({ message: m.auth.accountBlocked });
+      }
+    }
 
     // token
     const accessToken = generateAccessToken(user._id);
@@ -422,12 +555,13 @@ exports.resendOtp = async (req, res) => {
       if (!user)
         return res.status(404).json({ message: m.auth.emailNotRegistered });
 
-      // Rate limit: نفس المنطق
-      const secondsSinceSent = user.emailOtpExpire
-        ? (user.emailOtpExpire - Date.now()) / 1000
-        : 0;
-      if (secondsSinceSent > 59 * 60) {
-        return res.status(429).json({ message: m.auth.resendTooSoon });
+      // v4.8 — استبدال حساب throttle اليدوي (كان مختلف شوي عن منطق الهاتف)
+      // بنفس الأداة الموحّدة canSendOtp/secondsUntilNextOtp
+      if (!canSendOtp(user.emailOtpExpire)) {
+        return res.status(429).json({
+          message: m.auth.resendTooSoon,
+          retryAfterSeconds: secondsUntilNextOtp(user.emailOtpExpire),
+        });
       }
 
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
@@ -435,9 +569,12 @@ exports.resendOtp = async (req, res) => {
       user.emailOtpExpire = Date.now() + 60 * 60 * 1000;
       await user.save();
 
+      // v4.8 — توحيد مع قسم الهاتف: فشل الإرسال ما بيوقف الطلب (مرحلة اختبار)
       const sent = await emailProvider.send(user.email, `Your OTP: ${otp}`);
       if (!sent) {
-        return res.status(500).json({ message: m.auth.resendFailed });
+        console.warn(
+          `⚠️ Resend email OTP failed for ${user.email} — continuing (test mode)`,
+        );
       }
 
       return res.status(200).json({ message: m.auth.resendSuccess });
@@ -450,6 +587,9 @@ exports.resendOtp = async (req, res) => {
 
 exports.logout = async (req, res) => {
   req.user.refreshToken = null;
+  // v4.8 — تصفير نافذة السماح كمان حتى ما تضل قابلة استخدام بعد الخروج
+  req.user.previousRefreshToken = null;
+  req.user.previousRefreshTokenExpiresAt = null;
   await req.user.save();
   res
     .clearCookie("refreshToken")

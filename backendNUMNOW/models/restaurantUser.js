@@ -41,6 +41,20 @@ const restaurantUserSchema = new mongoose.Schema(
       default: null,
     },
 
+    // v4.8 — نافذة سماح قصيرة (10 ثواني) لإعادة استخدام الـ refresh token
+    // السابق مباشرة بعد الـ rotation. تحل سباق طلبات متزامنة من نفس
+    // المتصفح (مثلاً تبويبين مفتوحين، أو أكتر من طلب فشل بـ401 بنفس
+    // اللحظة) بدل ما يترفضوا ويسببوا logout رغم إنو الجلسة صالحة.
+    // ما إلها استخدام تاني غير هيك.
+    previousRefreshToken: {
+      type: String,
+      default: null,
+    },
+    previousRefreshTokenExpiresAt: {
+      type: Date,
+      default: null,
+    },
+
     // OTP للتحقق
     emailOtp: String,
     emailOtpExpire: Date,

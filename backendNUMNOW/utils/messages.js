@@ -31,6 +31,8 @@ const translations = {
       invalidResetType: "Type must be 'phone' or 'email'",
       passwordMismatch: "Passwords do not match",
       passwordTooShort: "Password must be at least 6 characters",
+      // v4.8 — restaurant account blocked by admin
+      accountBlocked: "Your account has been blocked",
     },
 
     // ── Category ──────────────────────────────────────────────
@@ -130,6 +132,8 @@ const translations = {
       invalidResetType: "يجب أن يكون النوع 'phone' أو 'email'",
       passwordMismatch: "كلمتا المرور غير متطابقتين",
       passwordTooShort: "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
+      // v4.8 — حظر حساب المطعم من الأدمن
+      accountBlocked: "تم حظر حسابك",
     },
 
     category: {
@@ -225,6 +229,8 @@ const translations = {
       invalidResetType: "Typ muss 'phone' oder 'email' sein",
       passwordMismatch: "Passwörter stimmen nicht überein",
       passwordTooShort: "Das Passwort muss mindestens 6 Zeichen lang sein",
+      // v4.8 — Restaurantkonto vom Admin gesperrt
+      accountBlocked: "Ihr Konto wurde gesperrt",
     },
 
     category: {

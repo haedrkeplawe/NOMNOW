@@ -36,6 +36,18 @@ const authLimiter = rateLimit({
   message: { message: "Too many attempts, please try again in 15 minutes." },
 });
 
+// v4.8 — Rate limit صارم مخصص لنقاط التحقق من كود الـ OTP (6 أرقام).
+// كانت verifyphone/verifyemail/resend-otp/reset-password مغطاة بس بـ
+// generalLimiter العام (1000 طلب/15 دقيقة، مشترك مع كل /api/restaurant)
+// وما في أي عداد محاولات فاشلة لكل حساب — فكان تخمين الكود ممكن نظرياً.
+const otpVerifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Too many attempts, please try again in 15 minutes." },
+});
+
 app.use(
   cors({
     origin: [
@@ -57,6 +69,10 @@ app.use("/api/driver", generalLimiter);
 app.use("/api/restaurant/loginwithphone", authLimiter);
 app.use("/api/restaurant/loginwithemail", authLimiter);
 app.use("/api/restaurant/forgot-password", authLimiter);
+app.use("/api/restaurant/verifyphone", otpVerifyLimiter);
+app.use("/api/restaurant/verifyemail", otpVerifyLimiter);
+app.use("/api/restaurant/resend-otp", otpVerifyLimiter);
+app.use("/api/restaurant/reset-password", otpVerifyLimiter);
 app.use("/api/user/loginwithphone", authLimiter);
 app.use("/api/user/loginwithemail", authLimiter);
 app.use("/api/user/forgot-password", authLimiter);
