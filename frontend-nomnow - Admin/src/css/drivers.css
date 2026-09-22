@@ -414,6 +414,61 @@
   color: rgb(77 76 76);
 }
 
+/* v4.5 — Delivery Offer Response */
+.driver-page .showdriver .offer-stats {
+  margin-top: 20px;
+  padding: 17px;
+  border-radius: 12px;
+  border: 1px solid var(--primary-border);
+  background: var(--third-background);
+}
+.driver-page .showdriver .offer-stats h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary-text);
+  margin-bottom: 14px;
+}
+.driver-page .showdriver .offer-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 14px;
+}
+.driver-page .showdriver .offer-stats-grid > div {
+  text-align: center;
+}
+.driver-page .showdriver .offer-stats-grid p {
+  font-size: 12px;
+  color: var(--secondary-text);
+  margin-bottom: 4px;
+}
+.driver-page .showdriver .offer-stats-grid h2 {
+  font-size: 20px;
+  font-weight: 700;
+}
+.driver-page .showdriver .offer-stats-grid .offered h2 {
+  color: #1447e6;
+}
+.driver-page .showdriver .offer-stats-grid .accepted h2 {
+  color: #00c950;
+}
+.driver-page .showdriver .offer-stats-grid .rejected h2 {
+  color: #e7000b;
+}
+.driver-page .showdriver .offer-stats-grid .ignored h2 {
+  color: #f0b100;
+}
+.driver-page .showdriver .offer-stats-rate {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--primary-border);
+  font-size: 13px;
+  color: var(--secondary-text);
+  text-align: center;
+}
+.driver-page .showdriver .offer-stats-rate strong {
+  color: var(--primary-text);
+}
+
 .driver-page .showdriver .three {
   display: grid;
   grid-template-columns: 1fr 1fr;

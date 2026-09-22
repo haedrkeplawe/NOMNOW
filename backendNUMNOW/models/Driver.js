@@ -95,6 +95,17 @@ const driverSchema = new mongoose.Schema(
       max: 5,
     },
 
+    // v4.5 — تتبّع تعامل السائق مع عروض التوصيل (راجع النقاش: تتبّع رفض
+    // السائق). "rejected" رفض صراحة (ضغط لأ)، "ignored" ما ردّ إطلاقًا
+    // لحد ما انتهت مهلة الجولة — تمييز مقصود، الاتنين سلوك مختلف. لا
+    // تحسب أي حالة إلغاء الطلب من المطعم هون (تلك مش مسؤولية السائق).
+    orderOfferStats: {
+      offered: { type: Number, default: 0 },
+      accepted: { type: Number, default: 0 },
+      rejected: { type: Number, default: 0 },
+      ignored: { type: Number, default: 0 },
+    },
+
     userRatings: [userRatingSchema],
 
     isDocumentsVerified: {

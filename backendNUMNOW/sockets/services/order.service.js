@@ -107,7 +107,7 @@ const startSearchRound = async (io, orderId) => {
   // driverEarning تحت (راجع BACKEND_TASK_driver_offer_data.md قسم 3.2 —
   // بدونهم driverEarning كانت ترجع undefined حتى لو أضفناها للحمولة)
   const current = await Order.findById(orderId).select(
-    "driverId orderStatus restaurantId driverSearchAttempt notifiedDriverIds orderNumber totalPrice items deliveryAddress deliveryFee originalDeliveryFee",
+    "driverId orderStatus restaurantId driverSearchAttempt notifiedDriverIds orderNumber totalPrice items deliveryAddress deliveryFee originalDeliveryFee pendingDriverIds",
   );
 
   // الطلب اتلغى، أو حدا ثاني أخذه، أو حالته تغيّرت — ما في داعي نكمل
@@ -118,6 +118,21 @@ const startSearchRound = async (io, orderId) => {
     // ما في شي أصلاً يحتاج تنظيف (راجع تعليقها فوق لتفاصيل أكتر)
     await stopActiveSearch(io, orderId);
     return;
+  }
+
+  // v4.5 — أي سائق لسا موجود جوا pendingDriverIds لحظة ما وصلنا هون يعني
+  // الجولة السابقة انتهت بتايم آوت طبيعي (مش بسبب إلغاء — تلك بتمر من
+  // stopActiveSearch فوق، مش من هون) وما ردّ إطلاقًا — لا قبول ولا رفض
+  // صراحة (الاتنين بيشيلوا السائق من القائمة فورًا بمسارهم الخاص). هاد
+  // بالضبط تعريف "ignored" (راجع orderOfferStats بـ Driver.js). ما
+  // منستنى هالكتابة (fire-and-forget) حتى ما نأخّر إرسال الجولة الجاية
+  if (current.pendingDriverIds?.length > 0) {
+    Driver.updateMany(
+      { _id: { $in: current.pendingDriverIds } },
+      { $inc: { "orderOfferStats.ignored": 1 } },
+    ).catch((err) =>
+      console.error("orderOfferStats ignored-tracking error:", err),
+    );
   }
 
   const attemptBefore = current.driverSearchAttempt || 0;
@@ -196,6 +211,14 @@ const startSearchRound = async (io, orderId) => {
 
   if (!claimed) return; // حدا سبقنا بحجز هالجولة بالضبط — تجاهل بأمان
 
+  // v4.5 — عداد "عُرض عليه" لكل سائق بهالجولة (تحليلي بحت، fire-and-forget)
+  Driver.updateMany(
+    { _id: { $in: notifiedIds } },
+    { $inc: { "orderOfferStats.offered": 1 } },
+  ).catch((err) =>
+    console.error("orderOfferStats offered-tracking error:", err),
+  );
+
   // بث الحدث اللحظي (Socket) لكل سائق قريب متصل حالياً
   // v4.1 — إصلاح: restaurantName صارت restaurant.name الحقيقي بدل
   // order.restaurantName يلي كان دايمًا undefined (الحقل ما إله وجود
@@ -268,3 +291,4 @@ module.exports = {
   stopActiveSearch,
   startSearchRecoverySweep,
 };
+d;

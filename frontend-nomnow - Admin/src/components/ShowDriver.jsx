@@ -325,6 +325,61 @@ const ShowDriver = ({
                 </div>
               </div>
 
+              {/* v4.5 — استجابة السائق لعروض التوصيل (راجع النقاش: تتبّع
+                  رفض السائق). offered/accepted من Driver.orderOfferStats،
+                  متوفرة بس للطلبات اللي حصلت بعد نشر هالتحديث. */}
+              <div className="offer-stats">
+                <h3>Delivery Offer Response</h3>
+                <div className="offer-stats-grid">
+                  <div className="offered">
+                    <p>Offered</p>
+                    <h2>
+                      {loadingStats
+                        ? "…"
+                        : stats?.orderOfferStats?.offered ?? 0}
+                    </h2>
+                  </div>
+                  <div className="accepted">
+                    <p>Accepted</p>
+                    <h2>
+                      {loadingStats
+                        ? "…"
+                        : stats?.orderOfferStats?.accepted ?? 0}
+                    </h2>
+                  </div>
+                  <div className="rejected">
+                    <p>Rejected</p>
+                    <h2>
+                      {loadingStats
+                        ? "…"
+                        : stats?.orderOfferStats?.rejected ?? 0}
+                    </h2>
+                  </div>
+                  <div className="ignored">
+                    <p>Ignored</p>
+                    <h2>
+                      {loadingStats
+                        ? "…"
+                        : stats?.orderOfferStats?.ignored ?? 0}
+                    </h2>
+                  </div>
+                </div>
+                {!loadingStats && stats?.orderOfferStats?.offered > 0 && (
+                  <p className="offer-stats-rate">
+                    Missed-offer rate (rejected + ignored):{" "}
+                    <strong>
+                      {(
+                        ((stats.orderOfferStats.rejected +
+                          stats.orderOfferStats.ignored) /
+                          stats.orderOfferStats.offered) *
+                        100
+                      ).toFixed(0)}
+                      %
+                    </strong>
+                  </p>
+                )}
+              </div>
+
               {/* Contact + Details */}
               <div className="three">
                 <div className="left">

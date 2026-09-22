@@ -148,6 +148,14 @@ module.exports = (io, driverNS) => {
             message: m.rejected,
           });
 
+          // v4.5 — تتبّع رفض السائق (راجع orderOfferStats بـ Driver.js) —
+          // fire-and-forget، تحليلي بحت، ما لازم يأخّر أو يفشّل الرد
+          Driver.findByIdAndUpdate(driverId, {
+            $inc: { "orderOfferStats.rejected": 1 },
+          }).catch((err) =>
+            console.error("orderOfferStats rejected-tracking error:", err),
+          );
+
           // v4.1 — إصلاح 5: نشيل هالسائق من قائمة "بانتظار رد" لهالجولة.
           // لو صار فاضية (يعني كل يلي انبعتلهم هالجولة رفضوا صراحة) —
           // منقطع الانتظار (30 ثانية) ومنبلش الجولة الجاية فورًا، بدل
@@ -269,7 +277,11 @@ module.exports = (io, driverNS) => {
             .populate("userId", "name phone")
             .populate("restaurantId", "name location")
             .populate("driverId", "name phone vehicletype vehicleplate rating"),
-          Driver.findByIdAndUpdate(driverId, { availability: "busy" }),
+          Driver.findByIdAndUpdate(driverId, {
+            availability: "busy",
+            // v4.5 — تتبّع قبول السائق (راجع orderOfferStats بـ Driver.js)
+            $inc: { "orderOfferStats.accepted": 1 },
+          }),
         ]);
 
         socket.emit("order:driverRequest:accepted", {
@@ -454,3 +466,4 @@ module.exports = (io, driverNS) => {
     });
   });
 };
+a;

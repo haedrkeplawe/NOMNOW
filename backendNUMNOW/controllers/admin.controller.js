@@ -1458,6 +1458,8 @@ exports.getDriverStats = async (req, res) => {
         totalEarnings,
         rating: driver.rating,
         currency: driver.country === "DE" ? "EUR" : "SYP",
+        // v4.5 — راجع النقاش: تتبّع رفض السائق
+        orderOfferStats: driver.orderOfferStats,
       },
     });
   } catch (err) {
