@@ -65,6 +65,51 @@ const Drivers = () => {
   });
   const [selectedDriver, setSelectedDriver] = useState(null);
 
+  // v4.9 — سعر أجرة التوصيل لكل كيلومتر (سوريا) — إعداد عام قابل
+  // للتعديل من هون (راجع calculateDeliveryFee بالباك)
+  const [pricePerKm, setPricePerKm] = useState(null);
+  const [pricePerKmInput, setPricePerKmInput] = useState("");
+  const [pricePerKmLoading, setPricePerKmLoading] = useState(true);
+  const [savingPricePerKm, setSavingPricePerKm] = useState(false);
+
+  const fetchDeliveryPricing = useCallback(async () => {
+    setPricePerKmLoading(true);
+    try {
+      const res = await api.get("admin/settings/delivery-pricing");
+      setPricePerKm(res.data.deliveryPricePerKmSY);
+      setPricePerKmInput(String(res.data.deliveryPricePerKmSY));
+    } catch {
+      toast.error("Failed to load delivery pricing");
+    } finally {
+      setPricePerKmLoading(false);
+    }
+  }, [api]);
+
+  useEffect(() => {
+    fetchDeliveryPricing();
+  }, [fetchDeliveryPricing]);
+
+  const handleSavePricePerKm = async () => {
+    const value = Number(pricePerKmInput);
+    if (Number.isNaN(value) || value < 0) {
+      toast.error("Enter a valid non-negative number");
+      return;
+    }
+    setSavingPricePerKm(true);
+    try {
+      const res = await api.patch("admin/settings/delivery-pricing", {
+        deliveryPricePerKmSY: value,
+      });
+      setPricePerKm(res.data.deliveryPricePerKmSY);
+      setPricePerKmInput(String(res.data.deliveryPricePerKmSY));
+      toast.success("Delivery price per km updated");
+    } catch {
+      toast.error("Failed to update delivery pricing");
+    } finally {
+      setSavingPricePerKm(false);
+    }
+  };
+
   const fetchDrivers = useCallback(async () => {
     setLoading(true);
     try {
@@ -125,6 +170,39 @@ const Drivers = () => {
         text3={"Add Driver"}
         setType={setType}
       />
+
+      {/* ── Delivery pricing (Syria) ────────────────────────── */}
+      <div className="drv-pricing-card">
+        <div className="drv-pricing-card-text">
+          <h4>Delivery Price per Km (Syria)</h4>
+          <p>
+            Delivery fee = distance (km) × this price. Applies to Syrian orders
+            only.
+          </p>
+        </div>
+        <div className="drv-pricing-card-controls">
+          <span className="drv-pricing-suffix">SYP</span>
+          <input
+            type="number"
+            min="0"
+            step="1"
+            value={pricePerKmInput}
+            onChange={(e) => setPricePerKmInput(e.target.value)}
+            disabled={pricePerKmLoading}
+          />
+          <button
+            className="drv-pricing-btn"
+            onClick={handleSavePricePerKm}
+            disabled={
+              pricePerKmLoading ||
+              savingPricePerKm ||
+              pricePerKmInput === String(pricePerKm)
+            }
+          >
+            {savingPricePerKm ? "Saving..." : "Update"}
+          </button>
+        </div>
+      </div>
 
       {/* ── Summary ─────────────────────────────────────────── */}
       <div className="summary">

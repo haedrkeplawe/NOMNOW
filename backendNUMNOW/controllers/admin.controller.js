@@ -13,6 +13,8 @@ const { default: mongoose } = require("mongoose");
 const Promotion = require("../models/Promotion");
 const Coupon = require("../models/Coupon");
 const MainCategory = require("../models/mainCategory");
+// v4.9 — سعر أجرة التوصيل لكل كيلومتر (سوريا) — إعداد عام قابل للتعديل
+const PlatformSettings = require("../models/platformSettings");
 // v4.0 — نفس دالة "آخر تقييم لكل مستخدم" المستعملة بـ user_controller.js،
 // حتى يطابق رقم لوحة الأدمن الرقم المخزَّن بـ driver.rating
 const { averageLatestPerUser } = require("../utils/ratingAverage");
@@ -1670,6 +1672,50 @@ exports.updateDriverCashLimit = async (req, res) => {
     await driver.save();
 
     res.status(200).json({ success: true, driver });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// v4.9 — سعر أجرة التوصيل لكل كيلومتر (سوريا فقط). إعداد عام على مستوى
+// المنصة كلها، معروض بلوحة الأدمن ضمن قسم السائقين لأنو مرتبط مباشرة
+// بأجرتهم (راجع calculateDeliveryFee/driverEarningOf).
+exports.getDeliveryPricing = async (req, res) => {
+  try {
+    const settings = await PlatformSettings.getSingleton();
+    res.status(200).json({
+      success: true,
+      deliveryPricePerKmSY: settings.deliveryPricePerKmSY,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.updateDeliveryPricing = async (req, res) => {
+  try {
+    const { deliveryPricePerKmSY } = req.body;
+
+    if (
+      typeof deliveryPricePerKmSY !== "number" ||
+      Number.isNaN(deliveryPricePerKmSY) ||
+      deliveryPricePerKmSY < 0
+    ) {
+      return res.status(400).json({
+        message: "deliveryPricePerKmSY must be a non-negative number",
+      });
+    }
+
+    const settings = await PlatformSettings.getSingleton();
+    settings.deliveryPricePerKmSY = deliveryPricePerKmSY;
+    await settings.save();
+
+    res.status(200).json({
+      success: true,
+      deliveryPricePerKmSY: settings.deliveryPricePerKmSY,
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: err.message });

@@ -53,6 +53,11 @@ router.patch(
   "/drivers/:id/earnings-settle",
   adminController.settleDriverEarnings,
 );
+// v4.9 — سعر أجرة التوصيل لكل كيلومتر (سوريا فقط)
+router
+  .route("/settings/delivery-pricing")
+  .get(adminController.getDeliveryPricing)
+  .patch(adminController.updateDeliveryPricing);
 
 // orders
 router.get("/orders", adminController.getAdminOrders);

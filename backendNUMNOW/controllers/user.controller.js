@@ -16,6 +16,9 @@ const Promotion = require("../models/Promotion");
 const Coupon = require("../models/Coupon");
 const Category = require("../models/category");
 const MainCategory = require("../models/mainCategory");
+// v4.9 — أجرة التوصيل بالمسافة (سوريا فقط — راجع نطاق العمل)
+const { distanceKm } = require("../utils/distance");
+const PlatformSettings = require("../models/platformSettings");
 // v3.9 — ربط أداة إصدار الكوبونات الفورية (بُنيت جاهزة سابقاً)
 // بحدث فعلي لأول مرة: كوبون ترحيبي تلقائي عند فتح حساب جديد
 const { issueCouponForUsers } = require("../utils/couponIssuer");
@@ -52,8 +55,42 @@ const WELCOME_COUPON = {
 
 // utils
 // التحقق من توفر عرض التوصيل المجاني
-const calculateDeliveryFee = async (cart, restaurant, session = null) => {
-  let deliveryFee = restaurant.country === "DE" ? 3 : 1000;
+// v4.9 — أجرة التوصيل بسوريا صارت بالمسافة (كم × سعر الكيلومتر القابل
+// للتعديل من لوحة الأدمن — قسم السائقين) بدل الرقم الثابت القديم.
+// ألمانيا خارج هالتغيير بالكامل عمداً (قرار عمل سابق: لا شغل على ألمانيا
+// إطلاقاً — راجع ملف القرارات) وتبقى بنفس أجرتها الثابتة كما كانت.
+//
+// deliveryCoordinates: إحداثيات عنوان التوصيل [lng, lat] (GeoJSON) — لو
+// null (مثلاً السلة بتتعرض قبل ما يكون عند المستخدم عنوان محفوظ بعد)
+// منرجع لأجرة أساس احتياطية بدل ما نطلع 0 أو نفشل.
+const calculateDeliveryFee = async (
+  cart,
+  restaurant,
+  deliveryCoordinates = null,
+  session = null,
+) => {
+  let deliveryFee;
+  let deliveryDistanceKm = null;
+
+  if (restaurant.country === "DE") {
+    deliveryFee = 3;
+  } else {
+    const settings = await PlatformSettings.getSingleton(session);
+    const pricePerKm = settings.deliveryPricePerKmSY;
+
+    if (deliveryCoordinates && restaurant.location?.coordinates) {
+      deliveryDistanceKm = distanceKm(
+        restaurant.location.coordinates,
+        deliveryCoordinates,
+      );
+      deliveryFee = Math.round(deliveryDistanceKm * pricePerKm);
+    } else {
+      // ما في عنوان توصيل معروف بعد — أجرة أساس احتياطية (نفس الرقم
+      // الثابت القديم) لحد ما يتوفر عنوان فعلي لحساب المسافة الحقيقية
+      deliveryFee = 1000;
+    }
+  }
+
   const originalDeliveryFee = deliveryFee;
   let flagChanged = false;
 
@@ -79,7 +116,12 @@ const calculateDeliveryFee = async (cart, restaurant, session = null) => {
     }
   }
 
-  return { deliveryFee, originalDeliveryFee, flagChanged };
+  return {
+    deliveryFee,
+    originalDeliveryFee,
+    flagChanged,
+    deliveryDistanceKm,
+  };
 };
 
 // v4.0 — يحسب سعر الأصناف الأصلي (قبل خصم أي عرض "discount") من السلة.
@@ -1663,7 +1705,13 @@ exports.getCart = async (req, res) => {
     if (!cart) {
       return res.status(200).json({
         success: true,
-        cart: { items: [], itemsPrice: 0, deliveryFee: 0, totalCartPrice: 0 },
+        cart: {
+          items: [],
+          itemsPrice: 0,
+          deliveryFee: 0,
+          deliveryDistanceKm: null,
+          totalCartPrice: 0,
+        },
       });
     }
 
@@ -1674,16 +1722,31 @@ exports.getCart = async (req, res) => {
     if (itemsChanged) needsSave = true;
 
     const restaurant = await Restaurant.findById(cart.restaurantId).select(
-      "country",
+      "country location",
     );
 
     let deliveryFee = 0;
     let originalDeliveryFee = 0;
+    let deliveryDistanceKm = null;
 
     if (restaurant) {
-      const feeResult = await calculateDeliveryFee(cart, restaurant);
+      // v4.9 — عنوان معاينة السلة: العنوان الافتراضي المحفوظ للمستخدم
+      // (لو موجود). العنوان الفعلي المؤكد بييجي لاحقاً من body الطلب
+      // نفسه عند createOrder — هاد بس تقدير بالسلة قبل التأكيد.
+      const defaultAddress =
+        req.user.addresses?.find((a) => a.isDefault) ||
+        req.user.addresses?.[0] ||
+        null;
+      const previewCoordinates = defaultAddress?.location?.coordinates || null;
+
+      const feeResult = await calculateDeliveryFee(
+        cart,
+        restaurant,
+        previewCoordinates,
+      );
       deliveryFee = feeResult.deliveryFee;
       originalDeliveryFee = feeResult.originalDeliveryFee;
+      deliveryDistanceKm = feeResult.deliveryDistanceKm;
       // v3.4 — لو انتهى عرض التوصيل المجاني
       if (feeResult.flagChanged) needsSave = true;
     }
@@ -1708,6 +1771,9 @@ exports.getCart = async (req, res) => {
     cartObj.itemsPrice = itemsPrice;
     cartObj.deliveryFee = deliveryFee;
     cartObj.originalDeliveryFee = originalDeliveryFee;
+    // v4.9 — للعرض فقط (مثلاً "توصيل تقريبي X كم") — تقدير قبل التأكيد،
+    // بيتغيّر لو المستخدم اختار عنوان تاني وقت createOrder
+    cartObj.deliveryDistanceKm = deliveryDistanceKm;
     cartObj.couponDiscount = couponResult.discount;
     cartObj.couponType = couponResult.coupon?.type || null;
     cartObj.totalCartPrice = Number(
@@ -2307,7 +2373,7 @@ exports.getUserOrders = async (req, res) => {
       // driverSearchExpiresAt/driverSearchAttempt حقول داخلية لآلية
       // البحث عن سائق — نستثنيها كلها حتى ما توصل لفرونت المستخدم أبداً
       .select(
-        "-originalItemsPrice -promotionDiscount -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
+        "-originalItemsPrice -promotionDiscount -deliveryDistanceKm -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
       )
       .populate("restaurantId", "name image address")
       .populate("driverId", "name phone vehicletype vehicleplate rating")
@@ -2477,7 +2543,7 @@ exports.createOrder = async (req, res) => {
 
     // جلب taxRate من المطعم تلقائًا
     const restaurant = await Restaurant.findById(cart.restaurantId).select(
-      "taxRate paymentMethods country status",
+      "taxRate paymentMethods country status location",
     );
     if (!restaurant) {
       await session.abortTransaction();
@@ -2498,8 +2564,18 @@ exports.createOrder = async (req, res) => {
     }
 
     // v3.4 — دالة موحّدة (نفس المستخدمة بـ getCart) + تنظف الحقول العالقة تلقائياً
-    const { deliveryFee: baseDeliveryFee, originalDeliveryFee } =
-      await calculateDeliveryFee(cart, restaurant, session);
+    // v4.9 — منمرر إحداثيات عنوان التوصيل الفعلي (اتحقق من صحتها فوق
+    // بتحصين 1) حتى تُحسب أجرة سوريا بالمسافة الحقيقية، مو أجرة أساس تقديرية
+    const {
+      deliveryFee: baseDeliveryFee,
+      originalDeliveryFee,
+      deliveryDistanceKm,
+    } = await calculateDeliveryFee(
+      cart,
+      restaurant,
+      deliveryAddress.location.coordinates,
+      session,
+    );
 
     // v3.9 — إعادة تحقق نهائية من الكوبون وقت الطلب (مو بس وقت التطبيق)
     // — ممكن يكون تغيّر شي بينهن (انتهت صلاحيته، وصل حد الاستخدام،
@@ -2571,6 +2647,8 @@ exports.createOrder = async (req, res) => {
           promotionDiscount,
           deliveryFee,
           originalDeliveryFee,
+          // v4.9 — لقطة المسافة وقت إنشاء الطلب (سوريا) — للمراجعة/التقارير
+          deliveryDistanceKm,
           taxPrice,
           totalPrice,
           couponCode:
@@ -2613,9 +2691,11 @@ exports.createOrder = async (req, res) => {
     // أرباح المطعم/الأدمن، وnotifiedDriverIds/pendingDriverIds/
     // driverSearchExpiresAt/driverSearchAttempt حقول داخلية لآلية البحث
     // عن سائق (أصلاً فاضية بهاللحظة بما إنو الطلب لسا موجّه للمطعم) —
-    // منشيلها كلها من الـ response حتى يضل شكله مطابق 100% لما كان قبل
+    // منشيلها كلها من الـ response حتى يضل شكله مطابق 100% لما كان قبل.
+    // v4.9 — deliveryDistanceKm أضيفت لنفس القائمة (حقل داخلي مثلها تماماً)
     delete responseOrder.originalItemsPrice;
     delete responseOrder.promotionDiscount;
+    delete responseOrder.deliveryDistanceKm;
     delete responseOrder.notifiedDriverIds;
     delete responseOrder.pendingDriverIds;
     delete responseOrder.driverSearchExpiresAt;

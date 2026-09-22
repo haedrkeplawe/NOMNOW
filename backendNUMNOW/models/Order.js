@@ -75,6 +75,11 @@ const orderSchema = new mongoose.Schema(
     // new v2.2 — رسوم التوصيل الأصلية قبل تطبيق عرض التوصيل المجاني
     // Flutter: لا يحتاج هذا الحقل — للباك فقط
     originalDeliveryFee: { type: Number, default: null },
+    // v4.9 — المسافة (كم) بين المطعم وعنوان التوصيل وقت إنشاء الطلب
+    // (خط مستقيم Haversine — راجع utils/distance.js)، محفوظة كلقطة
+    // للمراجعة/التقارير لاحقاً. ما تتغيّر بعد الإنشاء حتى لو تعديل سعر
+    // الكيلومتر من لوحة الأدمن بعدين. Flutter: لا يحتاج هذا الحقل — للباك فقط.
+    deliveryDistanceKm: { type: Number, default: null },
     taxPrice: { type: Number, default: 0 },
     totalPrice: { type: Number, required: true },
 
