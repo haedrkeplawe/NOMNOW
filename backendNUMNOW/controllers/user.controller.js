@@ -2519,6 +2519,26 @@ exports.createOrder = async (req, res) => {
 
     await syncCartItemPromotions(cart, session);
 
+    // v4.10.1 — تعبئة احتياطية: عناصر انضافت للسلة قبل نزول prepTimeMinutes
+    // (v4.10) قيمتها 0 افتراضياً. استعلام واحد بس على العناصر الناقصة
+    // فعلياً (بدل قراءة Food لكل عنصر بكل مرة) — يغطي الفجوة فوراً بدل ما
+    // نستنى تجدد السلات لحالها.
+    const foodIdsMissingPrepTime = cart.items
+      .filter((item) => !item.prepTimeMinutes)
+      .map((item) => item.foodId);
+
+    let prepTimeFallbackMap = null;
+    if (foodIdsMissingPrepTime.length > 0) {
+      let foodQuery = Food.find({
+        _id: { $in: foodIdsMissingPrepTime },
+      }).select("time");
+      if (session) foodQuery = foodQuery.session(session);
+      const foods = await foodQuery;
+      prepTimeFallbackMap = new Map(
+        foods.map((f) => [f._id.toString(), f.time || 0]),
+      );
+    }
+
     const items = cart.items.map((item) => ({
       foodId: item.foodId,
       name: item.name,
@@ -2531,7 +2551,11 @@ exports.createOrder = async (req, res) => {
       extras: item.extras,
       totalPrice: item.totalItemPrice,
       // v4.10 — لقطة وقت التحضير من السلة، أساس تقدير وقت الوصول
-      prepTimeMinutes: item.prepTimeMinutes || 0,
+      // v4.10.1 — احتياط للسلات القديمة (راجع الاستعلام فوق)
+      prepTimeMinutes:
+        item.prepTimeMinutes ||
+        prepTimeFallbackMap?.get(item.foodId.toString()) ||
+        0,
     }));
 
     const itemsPrice = cart.totalCartPrice;
