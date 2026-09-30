@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const Order = require("../models/Order");
 const mongoose = require("mongoose");
 const { getMessages, getLang } = require("../utils/messages");
-const smsProvider = require("../utils/smsProvider");
+const otpProvider = require("../utils/otpProvider");
 const { canSendOtp, secondsUntilNextOtp } = require("../utils/otpRateLimit");
 // v4.2 — سياسة "أجر السائق الحقيقي" موحّدة بدالة واحدة بدل تكرارها
 // بثمانية مواضع، راجع utils/driverEarningOf.js
@@ -223,7 +223,7 @@ exports.loginWithPhone = async (req, res) => {
       // v2.0 — إرسال SMS حقيقي عبر Aman Gate. بمرحلة الاختبار الحالية ما منوقف
       // الطلب إذا فشل الإرسال، ومنبقي otp بالـ response بطلب صريح.
       const smsLang = getLang(req) === "ar" ? "ar" : "en";
-      const sent = await smsProvider.send(driver.phone, otp, smsLang);
+      const sent = await otpProvider.send(driver.phone, otp, smsLang);
       if (!sent) {
         console.warn(
           `⚠️ SMS send failed for ${driver.phone} — continuing (test mode)`,
@@ -357,7 +357,7 @@ exports.forgotPassword = async (req, res) => {
     // v4.3 — مرحلة اختبار: فشل الإرسال ما بيوقف الطلب، والكود منرجعه صراحة
     // بالـ response مؤقتاً لأغراض التطوير — رح ينشال هالجزء لاحقاً.
     const smsLang = getLang(req) === "ar" ? "ar" : "en";
-    const sent = await smsProvider.send(driver.phone, otp, smsLang);
+    const sent = await otpProvider.send(driver.phone, otp, smsLang);
     if (!sent) {
       console.warn(
         `⚠️ Driver password reset SMS failed for ${driver.phone} — continuing (test mode)`,

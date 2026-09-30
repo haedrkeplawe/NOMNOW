@@ -4,7 +4,7 @@ const Food = require("../models/food");
 const Driver = require("../models/Driver");
 const Category = require("../models/category");
 const bcrypt = require("bcryptjs");
-const smsProvider = require("../utils/smsProvider");
+const otpProvider = require("../utils/otpProvider");
 const emailProvider = require("../utils/emailProvider");
 const jwt = require("jsonwebtoken");
 const { generateAccessToken, generateRefreshToken } = require("../utils/token");
@@ -62,7 +62,7 @@ exports.forgotPassword = async (req, res) => {
     // رح ينشال هالجزء لاحقاً ويبقى الإرسال عبر SMS/Email فقط.
     if (type === "phone") {
       const smsLang = getLang(req) === "ar" ? "ar" : "en";
-      const sent = await smsProvider.send(user.phone, otp, smsLang);
+      const sent = await otpProvider.send(user.phone, otp, smsLang);
       if (!sent) {
         console.warn(
           `⚠️ Password reset SMS failed for ${user.phone} — continuing (test mode)`,
@@ -307,7 +307,7 @@ exports.loginWithPhone = async (req, res) => {
     // v2.0 — إرسال SMS حقيقي عبر Aman Gate. بمرحلة الاختبار الحالية ما منوقف
     // الطلب إذا فشل الإرسال، ومنبقي otp بالـ response بطلب صريح.
     const smsLang = getLang(req) === "ar" ? "ar" : "en";
-    const sent = await smsProvider.send(user.phone, otp, smsLang);
+    const sent = await otpProvider.send(user.phone, otp, smsLang);
     if (!sent) {
       console.warn(
         `⚠️ SMS send failed for ${user.phone} — continuing (test mode)`,
@@ -534,7 +534,7 @@ exports.resendOtp = async (req, res) => {
       // v2.0 — إرسال SMS حقيقي عبر Aman Gate. بمرحلة الاختبار الحالية ما منوقف
       // الطلب إذا فشل الإرسال، ومنبقي otp بالـ response بطلب صريح.
       const smsLang = getLang(req) === "ar" ? "ar" : "en";
-      const sent = await smsProvider.send(user.phone, otp, smsLang);
+      const sent = await otpProvider.send(user.phone, otp, smsLang);
       if (!sent) {
         console.warn(
           `⚠️ SMS send failed for ${user.phone} — continuing (test mode)`,

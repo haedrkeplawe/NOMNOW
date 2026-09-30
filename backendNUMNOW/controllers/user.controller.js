@@ -2,7 +2,7 @@ const User = require("../models/User");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const uploadBuffer = require("../utils/cloudUpload");
-const smsProvider = require("../utils/smsProvider");
+const otpProvider = require("../utils/otpProvider");
 const Restaurant = require("../models/restaurant");
 const Food = require("../models/food");
 const Driver = require("../models/Driver");
@@ -317,7 +317,7 @@ exports.forgotPassword = async (req, res) => {
     // v4.3 — مرحلة اختبار: فشل الإرسال ما بيوقف الطلب، والكود منرجعه صراحة
     // بالـ response مؤقتاً لأغراض التطوير — رح ينشال هالجزء لاحقاً.
     const smsLang = getLang(req) === "ar" ? "ar" : "en";
-    const sent = await smsProvider.send(user.phone, otp, smsLang);
+    const sent = await otpProvider.send(user.phone, otp, smsLang);
     if (!sent) {
       console.warn(
         `⚠️ User password reset SMS failed for ${user.phone} — continuing (test mode)`,
@@ -522,7 +522,7 @@ exports.loginWithPhone = async (req, res) => {
       // طلب صريح) ما منوقف الطلب إذا فشل الإرسال، ومنبقي otp بالـ response
       // حتى ما يتعطل التطبيق إذا خلصت رسائل الباقة أثناء الاختبار.
       const smsLang = getLang(req) === "ar" ? "ar" : "en";
-      const sent = await smsProvider.send(user.phone, otp, smsLang);
+      const sent = await otpProvider.send(user.phone, otp, smsLang);
       if (!sent) {
         console.warn(
           `⚠️ SMS send failed for ${user.phone} — continuing (test mode)`,

@@ -1,4 +1,4 @@
-// utils/smsProvider.js
+// utils/otpProvider.js
 // v2.0 — ربط فعلي مع Aman Gate (Syria SMS OTP) بدل الـ placeholder السابق
 // راجع مذكرة القرار الخاصة باختيار Aman Gate كمزوّد SMS الأساسي لسوريا
 //
