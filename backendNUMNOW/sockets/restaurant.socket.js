@@ -16,6 +16,8 @@ const {
 } = require("./services/order.service");
 // v3.5
 const { notifyUserOrderStatus } = require("./services/notification.service");
+// v4.11 — إعادة استخدام الكوبون عند إلغاء الطلب (راجع utils/couponUsage.js)
+const { releaseCouponUseForOrder } = require("../utils/couponUsage");
 
 // v4.4 — الأسباب المسموحة لإلغاء/رفض الطلب من طرف المطعم تحديدًا (مجموعة
 // جزئية من enum الكامل المشترك بـ Order.js — الأسباب الأخرى مخصصة لإلغاء
@@ -158,6 +160,9 @@ module.exports = (io, restaurantNS) => {
         // stopActiveSearch بـ order.service.js لتفاصيل ما تعمله بالضبط
         if (status === "cancelled") {
           await stopActiveSearch(io, order._id);
+          // v4.11 — الطلب الملغي ما بيستهلك استخدام الكوبون: نعيده
+          // (idempotent وما بترمي — فشله ما بيعطّل الإلغاء)
+          await releaseCouponUseForOrder(order._id);
         }
 
         const populatedOrder = await Order.findById(order._id)

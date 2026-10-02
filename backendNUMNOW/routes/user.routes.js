@@ -96,6 +96,8 @@ router
   .route("/order")
   .get(auth, userController.getUserOrders)
   .post(auth, userController.createOrder);
+// v4.11 — طلب واحد بنفس شكل عنصر القائمة (بدل جلب القائمة كاملة)
+router.get("/order/:orderId", auth, userController.getUserOrderById);
 
 router.get("/promotions", auth, userController.getPromotions);
 

@@ -100,6 +100,12 @@ const orderSchema = new mongoose.Schema(
     // الفعلي يلي انخصم وقتها حتى لو الكوبون تغيّر أو انحذف بعدين
     couponCode: { type: String, default: null },
     couponDiscount: { type: Number, default: 0 },
+    // v4.11 — علامة داخلية: هل استخدام الكوبون محسوب فعلاً بعدّاد
+    // Coupon.usedCount لهالطلب؟ بتنقلب true بلحظة التأكيد (order:send)
+    // وترجع false لما الطلب بينلغي وبيُعاد الاستخدام (idempotent — راجع
+    // utils/couponUsage.js). select:false = ما بتظهر بأي استعلام/استجابة
+    // (ما في داعي لاستثنائها يدوياً بأي select)
+    couponCounted: { type: Boolean, default: false, select: false },
 
     deliveryAddress: {
       // v2.0 — تحصين 2: إلزاميان — كانت السكيما تسمح بطلب بلا عنوان
@@ -297,6 +303,10 @@ const orderSchema = new mongoose.Schema(
 
 orderSchema.index({ restaurantId: 1 });
 orderSchema.index({ userId: 1 });
+// v4.11 — GET /order بيفلتر بـ userId وبيرتّب بـ createdAt (الفهرس { userId: 1 }
+// وحده ما بيغطي الترتيب). الفهرس الجديد بيغطي الاثنين، و{ userId: 1 } القديم
+// بقي بدون حذف (بدون خطر؛ ممكن يُحذف يدوياً لاحقاً لتوفير مساحة)
+orderSchema.index({ userId: 1, createdAt: -1 });
 orderSchema.index({ orderStatus: 1 });
 orderSchema.index({ settlementStatus: 1 });
 orderSchema.index({ deliveredByDriverAt: 1 });

@@ -22,6 +22,8 @@ const PlatformSettings = require("../models/platformSettings");
 // v3.9 — ربط أداة إصدار الكوبونات الفورية (بُنيت جاهزة سابقاً)
 // بحدث فعلي لأول مرة: كوبون ترحيبي تلقائي عند فتح حساب جديد
 const { issueCouponForUsers } = require("../utils/couponIssuer");
+// v4.11 — إعادة استخدام الكوبون عند إلغاء الطلب (الحجز نفسه صار بـ order:send)
+const { releaseCouponUseForOrder } = require("../utils/couponUsage");
 // v4.0 — دالة مشتركة لسياسة "آخر تقييم لكل مستخدم"، تحل محل المنطق
 // المكرر بـ updateRestaurantRating/rateFood/rateOrder وتُستعمل الآن
 // بـ rateDriver وgetUserOrders وadmin_controller.js أيضاً
@@ -244,10 +246,13 @@ const calculateCouponDiscount = async (
   }
 
   if (coupon.maxUsesPerUser) {
+    // v4.11 — الطلب الملغي ما بيستهلك استخدام الكوبون (متل العدّاد
+    // الإجمالي usedCount يلي بيُعاد عند الإلغاء) — غير هيك الكوبون
+    // الشخصي (maxUsesPerUser: 1) بيضيع عالزبون للأبد لو المطعم رفض طلبه
     let usageQuery = Order.countDocuments({
       userId: cart.userId,
       couponCode: coupon.code,
-      orderStatus: { $ne: "not_confirmed" },
+      orderStatus: { $nin: ["not_confirmed", "cancelled"] },
     });
     if (session) usageQuery = usageQuery.session(session);
     const userUsageCount = await usageQuery;
@@ -1918,7 +1923,8 @@ exports.getMyCoupons = async (req, res) => {
         $match: {
           userId: new mongoose.Types.ObjectId(userId),
           couponCode: { $ne: null },
-          orderStatus: { $ne: "not_confirmed" },
+          // v4.11 — نفس قاعدة calculateCouponDiscount (الملغي ما بيُحسب)
+          orderStatus: { $nin: ["not_confirmed", "cancelled"] },
         },
       },
       { $group: { _id: "$couponCode", count: { $sum: 1 } } },
@@ -2365,95 +2371,141 @@ exports.createPaymentIntent = async (req, res) => {
 };
 
 // orders
+// v4.11 — عرض الطلب للمستخدم: مشترك بين GET /order وGET /order/:orderId
+// حتى ما يتباعد شكل الرد بين الاثنين (select/populate/كتم أسباب الأدمن/
+// تقييماتي كلها بمكان واحد)
+//
+// v4.0/v4.1 — originalItemsPrice/promotionDiscount حقول داخلية لحساب
+// أرباح المطعم/الأدمن، وnotifiedDriverIds/pendingDriverIds/
+// driverSearchExpiresAt/driverSearchAttempt حقول داخلية لآلية البحث عن
+// سائق — نستثنيها كلها حتى ما توصل لفرونت المستخدم أبداً
+const USER_ORDER_HIDDEN_FIELDS =
+  "-originalItemsPrice -promotionDiscount -deliveryDistanceKm -statusTimestamps -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt";
+
+const applyUserOrderView = (query) =>
+  query
+    .select(USER_ORDER_HIDDEN_FIELDS)
+    .populate("restaurantId", "name image address")
+    .populate("driverId", "name phone vehicletype vehicleplate rating");
+
+// v4.11 — تقييمات المستخدم الشخصية (myFoodRating/myDriverRating) للطلبات
+// المُسلَّمة فقط، بدفعتين استعلام (Food + Driver) بدل استعلام لكل صنف
+// ولكل طلب (كان ~400 استعلام لزبون عنده 100 طلب، وكل استعلام يسحب
+// userRatings كاملة لكل الزبائن). النتيجة مطابقة للمنطق القديم حرفياً:
+//  - الأكل: أول صنف (بترتيب items) إلو تقييم من هالمستخدم لهالطلب بالذات
+//  - السائق: تقييم هالمستخدم لهالطلب بالذات (userId + orderId)
+const attachMyRatings = async (orders, userId) => {
+  const delivered = orders.filter((o) => o.orderStatus === "delivered");
+  if (delivered.length === 0) return orders;
+
+  const userOid = new mongoose.Types.ObjectId(userId);
+  const orderOids = delivered.map((o) => o._id);
+
+  const foodIdMap = new Map();
+  const driverIdMap = new Map();
+  for (const o of delivered) {
+    for (const item of o.items || []) {
+      if (item.foodId) foodIdMap.set(String(item.foodId), item.foodId);
+    }
+    const dId = o.driverId?._id ?? o.driverId;
+    if (dId) driverIdMap.set(String(dId), dId);
+  }
+
+  // $filter بيرجّع بس تقييمات هالمستخدم لهالطلبات (مو المصفوفة كاملة)
+  const ratingsPipeline = (ids) => [
+    { $match: { _id: { $in: ids }, "userRatings.userId": userOid } },
+    {
+      $project: {
+        userRatings: {
+          $filter: {
+            input: "$userRatings",
+            as: "r",
+            cond: {
+              $and: [
+                { $eq: ["$$r.userId", userOid] },
+                { $in: ["$$r.orderId", orderOids] },
+              ],
+            },
+          },
+        },
+      },
+    },
+  ];
+
+  const [foodDocs, driverDocs] = await Promise.all([
+    foodIdMap.size
+      ? Food.aggregate(ratingsPipeline([...foodIdMap.values()]))
+      : [],
+    driverIdMap.size
+      ? Driver.aggregate(ratingsPipeline([...driverIdMap.values()]))
+      : [],
+  ]);
+
+  // مفتاح: "<foodId|driverId>:<orderId>" → أول تقييم (نفس سلوك find القديم)
+  const toRatingMap = (docs) => {
+    const map = new Map();
+    for (const doc of docs) {
+      for (const r of doc.userRatings || []) {
+        const key = `${doc._id}:${r.orderId}`;
+        if (!map.has(key)) {
+          map.set(key, { rating: r.rating, comment: r.comment || null });
+        }
+      }
+    }
+    return map;
+  };
+  const foodRatings = toRatingMap(foodDocs);
+  const driverRatings = toRatingMap(driverDocs);
+
+  return orders.map((order) => {
+    if (order.orderStatus !== "delivered") return order;
+
+    let myFoodRating = null;
+    for (const item of order.items || []) {
+      const found = foodRatings.get(`${item.foodId}:${order._id}`);
+      if (found) {
+        myFoodRating = found;
+        break;
+      }
+    }
+
+    let myDriverRating = null;
+    if (order.driverId) {
+      const dId = order.driverId?._id ?? order.driverId;
+      myDriverRating = driverRatings.get(`${dId}:${order._id}`) || null;
+    }
+
+    return { ...order, myFoodRating, myDriverRating };
+  });
+};
+
+// v4.6.3 — إصلاح تسريب خصوصية: أسباب إلغاء الأدمن حساسة وداخلية
+// (نزاع، اشتباه احتيال...) وتعمّدنا عدم كشفها بنص إشعار الـ Push
+// (راجع notification.service.js) — بس نسينا نفس الكتم هون، فكانت
+// توصل لجهاز الزبون كاملة وواضحة عبر هالـ endpoint رغم حجبها
+// بالإشعار. لازم تتكتم بكل نقطة توصل تطبيق المستخدم، مش بس بالإشعار.
+const hideAdminCancelReasons = (order) =>
+  order.cancelledBy === "admin"
+    ? {
+        ...order,
+        cancellationReasonCode: null,
+        cancellationReasonNote: null,
+      }
+    : order;
+
 exports.getUserOrders = async (req, res) => {
   try {
     const userId = req.user._id ?? req.user.id;
 
-    const orders = await Order.find({ userId })
-      // v4.0/v4.1 — originalItemsPrice/promotionDiscount حقول داخلية
-      // لحساب أرباح المطعم/الأدمن، وnotifiedDriverIds/pendingDriverIds/
-      // driverSearchExpiresAt/driverSearchAttempt حقول داخلية لآلية
-      // البحث عن سائق — نستثنيها كلها حتى ما توصل لفرونت المستخدم أبداً
-      .select(
-        "-originalItemsPrice -promotionDiscount -deliveryDistanceKm -statusTimestamps -notifiedDriverIds -pendingDriverIds -driverSearchExpiresAt -driverSearchAttempt",
-      )
-      .populate("restaurantId", "name image address")
-      .populate("driverId", "name phone vehicletype vehicleplate rating")
+    const orders = await applyUserOrderView(Order.find({ userId }))
       .sort({ createdAt: -1 })
       .limit(500)
       .lean();
 
     // نضيف تقييم المستخدم الشخصي للأوردرات المكتملة فقط
-    const enrichedOrders = await Promise.all(
-      orders.map(async (order) => {
-        if (order.orderStatus !== "delivered") return order;
+    const enrichedOrders = await attachMyRatings(orders, userId);
 
-        // تقييم الأكل — نتحقق من كل أكلات الأوردر حتى نجد تقييم
-        let myFoodRating = null;
-        if (order.items?.length) {
-          for (const item of order.items) {
-            const food = await Food.findById(item.foodId)
-              .select("userRatings")
-              .lean();
-            if (!food) continue;
-            const found = food.userRatings?.find(
-              (r) =>
-                r.userId?.toString() === userId.toString() &&
-                r.orderId?.toString() === order._id.toString(),
-            );
-            if (found) {
-              myFoodRating = {
-                rating: found.rating,
-                comment: found.comment || null,
-              };
-              break;
-            }
-          }
-        }
-
-        // تقييم الدرايفر
-        let myDriverRating = null;
-        if (order.driverId) {
-          const driverId = order.driverId?._id ?? order.driverId;
-          const driver = await Driver.findById(driverId)
-            .select("userRatings")
-            .lean();
-          if (driver) {
-            // v4.0 — مطابقة بـ userId + orderId (نفس فرع الأكل فوقها)،
-            // بدل userId وحده يلي كان يرجّع myDriverRating غير null على
-            // كل طلبات الزبون مع هاد السائق
-            const found = driver.userRatings?.find(
-              (r) =>
-                r.userId?.toString() === userId.toString() &&
-                r.orderId?.toString() === order._id.toString(),
-            );
-            if (found) {
-              myDriverRating = {
-                rating: found.rating,
-                comment: found.comment || null,
-              };
-            }
-          }
-        }
-
-        return { ...order, myFoodRating, myDriverRating };
-      }),
-    );
-
-    // v4.6.3 — إصلاح تسريب خصوصية: أسباب إلغاء الأدمن حساسة وداخلية
-    // (نزاع، اشتباه احتيال...) وتعمّدنا عدم كشفها بنص إشعار الـ Push
-    // (راجع notification.service.js) — بس نسينا نفس الكتم هون، فكانت
-    // توصل لجهاز الزبون كاملة وواضحة عبر هالـ endpoint رغم حجبها
-    // بالإشعار. لازم تتكتم بكل نقطة توصل تطبيق المستخدم، مش بس بالإشعار.
-    const safeOrders = enrichedOrders.map((order) =>
-      order.cancelledBy === "admin"
-        ? {
-            ...order,
-            cancellationReasonCode: null,
-            cancellationReasonNote: null,
-          }
-        : order,
-    );
+    const safeOrders = enrichedOrders.map(hideAdminCancelReasons);
 
     res.status(200).json({
       success: true,
@@ -2462,6 +2514,41 @@ exports.getUserOrders = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+// v4.11 — GET /api/user/order/:orderId — طلب واحد بنفس شكل عنصر القائمة
+// بالضبط (نفس select/populate/كتم أسباب الأدمن/myFoodRating/myDriverRating)
+// بدل ما التطبيق يجيب القائمة كاملة (حتى 500 طلب) ليلاقي طلب واحد.
+// بيرجع فقط طلبات المستخدم نفسه (userId بالفلتر).
+exports.getUserOrderById = async (req, res) => {
+  const m = getMessages(req).user;
+  try {
+    const userId = req.user._id ?? req.user.id;
+    const { orderId } = req.params;
+
+    if (!mongoose.isValidObjectId(orderId)) {
+      return res.status(404).json({ message: m.order.notFound });
+    }
+
+    const order = await applyUserOrderView(
+      Order.findOne({ _id: orderId, userId }),
+    ).lean();
+
+    if (!order) {
+      return res.status(404).json({ message: m.order.notFound });
+    }
+
+    const [enriched] = await attachMyRatings([order], userId);
+
+    res.status(200).json({
+      success: true,
+      order: hideAdminCancelReasons(enriched),
+    });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: m.general.serverError, error: error.message });
   }
 };
 exports.createOrder = async (req, res) => {
@@ -2706,17 +2793,11 @@ exports.createOrder = async (req, res) => {
       { session },
     );
 
-    // v3.9 — زيادة عداد استخدام الكوبون (بس لو فعلياً انطبّق عالطلب)
-    if (
-      couponResult.coupon &&
-      (couponDiscount > 0 || couponResult.freeDelivery)
-    ) {
-      await Coupon.findByIdAndUpdate(
-        couponResult.coupon._id,
-        { $inc: { usedCount: 1 } },
-        { session },
-      );
-    }
+    // v4.11 — عدّاد استخدام الكوبون (usedCount) ما عاد بيزيد هون. الطلب
+    // بهاللحظة not_confirmed (ممكن ينحذف بالمحاولة الجاية أو ينلغى أو
+    // يفشل order:send بسبب مطعم مغلق/سلة تغيّرت...) فكان العدّاد يحترق
+    // بطلبات ما انبعتت أبداً. الحجز صار بـ order:send لحظة التأكيد الفعلي
+    // (راجع sockets/user.socket.js + utils/couponUsage.js).
 
     await session.commitTransaction();
     session.endSession();
@@ -2737,6 +2818,8 @@ exports.createOrder = async (req, res) => {
     delete responseOrder.promotionDiscount;
     delete responseOrder.deliveryDistanceKm;
     delete responseOrder.statusTimestamps;
+    // v4.11 — couponCounted علامة داخلية (راجع models/Order.js)
+    delete responseOrder.couponCounted;
     delete responseOrder.notifiedDriverIds;
     delete responseOrder.pendingDriverIds;
     delete responseOrder.driverSearchExpiresAt;
@@ -2756,11 +2839,22 @@ exports.createOrder = async (req, res) => {
       order: responseOrder,
     });
   } catch (error) {
-    await session.abortTransaction();
+    // v4.11 — لو الاستثناء صار بعد commitTransaction (مثلاً أثناء بناء
+    // الرد تحت)، الـ abortTransaction على معاملة مُثبَّتة كانت ترمي خطأ
+    // من داخل الـ catch نفسه — فما ينبعت أي رد والطلب (المُنشأ فعلاً)
+    // يضل معلّق لحد مهلة العميل. هلق منلغي المعاملة بس إذا لسا مفتوحة،
+    // ومنضمن إنو يطلع رد دايماً.
+    try {
+      if (session.inTransaction()) await session.abortTransaction();
+    } catch (abortErr) {
+      console.error("createOrder: abortTransaction failed:", abortErr.message);
+    }
     session.endSession();
-    res
-      .status(500)
-      .json({ message: m.general.serverError, error: error.message });
+    if (!res.headersSent) {
+      res
+        .status(500)
+        .json({ message: m.general.serverError, error: error.message });
+    }
   }
 };
 // v4.4 — الأسباب المسموحة لإلغاء المستخدم تحديدًا (مجموعة جزئية من enum
@@ -2850,6 +2944,10 @@ exports.cancelOrderFromUser = async (req, res) => {
     }
 
     await order.save();
+
+    // v4.11 — الطلب كان pending (استخدام الكوبون محسوب بـ order:send) —
+    // نعيد الاستخدام. idempotent وما بترمي (راجع utils/couponUsage.js)
+    await releaseCouponUseForOrder(order._id);
 
     // إشعار المطعم بالإلغاء — لا يجب أن يُفشل الاستجابة
     try {

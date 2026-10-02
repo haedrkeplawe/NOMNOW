@@ -530,6 +530,12 @@ translations.en.socket = {
     paymentNotCompleted:
       "Payment not completed. Please complete payment first.",
     orderSent: "Order sent to restaurant",
+    // v4.11 — مفاتيح كانت ناقصة/مكتوبة نصاً ثابتاً داخل user.socket.js
+    cartChangedSinceOrder:
+      "Your cart has changed since the order was created. Please review it and try again.",
+    promotionExpired:
+      "Some promotions have expired. Please review your cart and try again.",
+    couponLimitReached: "This coupon has reached its usage limit",
   },
   restaurant: {
     orderIdRequired: "orderId is required",
@@ -570,6 +576,12 @@ translations.ar.socket = {
     paymentRequired: "يجب إتمام الدفع قبل إرسال الطلب",
     paymentNotCompleted: "لم يكتمل الدفع. يرجى إتمام الدفع أولاً.",
     orderSent: "تم إرسال الطلب إلى المطعم",
+    // v4.11 — مفاتيح كانت ناقصة/مكتوبة نصاً ثابتاً داخل user.socket.js
+    cartChangedSinceOrder:
+      "تغيّرت سلتك منذ إنشاء الطلب. يرجى مراجعتها والمحاولة مرة أخرى.",
+    promotionExpired:
+      "انتهت صلاحية بعض العروض. يرجى مراجعة السلة والمحاولة مرة أخرى.",
+    couponLimitReached: "وصل هذا الكوبون للحد الأقصى من الاستخدام",
   },
   restaurant: {
     orderIdRequired: "معرّف الطلب مطلوب",
@@ -613,6 +625,12 @@ translations.de.socket = {
     paymentNotCompleted:
       "Zahlung nicht abgeschlossen. Bitte schließe die Zahlung zuerst ab.",
     orderSent: "Bestellung wurde an das Restaurant gesendet",
+    // v4.11 — مفاتيح كانت ناقصة/مكتوبة نصاً ثابتاً داخل user.socket.js
+    cartChangedSinceOrder:
+      "Dein Warenkorb hat sich seit der Bestellung geändert. Bitte überprüfe ihn und versuche es erneut.",
+    promotionExpired:
+      "Einige Aktionen sind abgelaufen. Bitte überprüfe deinen Warenkorb und versuche es erneut.",
+    couponLimitReached: "Dieser Gutschein hat sein Nutzungslimit erreicht",
   },
   restaurant: {
     orderIdRequired: "Bestell-ID ist erforderlich",

@@ -356,7 +356,18 @@ module.exports = (io, driverNS) => {
             orderId: populatedOrder._id,
             orderNumber: populatedOrder.orderNumber,
             status: populatedOrder.orderStatus,
-            driver: { id: driverId },
+            // v4.11 — بيانات السائق انضافت للحدث (additive بالكامل — id
+            // بقي مكانه ونفس الشكل). كانت محمّلة أصلاً بـ populatedOrder
+            // (populate فوق) بس ما كانت توصل للزبون، فالتطبيق كان يعيد
+            // جلب قائمة الطلبات كاملة بس ليعرض اسم السائق وهاتفه
+            driver: {
+              id: driverId,
+              name: populatedOrder.driverId?.name,
+              phone: populatedOrder.driverId?.phone,
+              vehicletype: populatedOrder.driverId?.vehicletype,
+              vehicleplate: populatedOrder.driverId?.vehicleplate,
+              rating: populatedOrder.driverId?.rating,
+            },
             // v4.10 — التقدير المُعاد حسابه (المرحلة 2/3) بموقع السائق الحقيقي
             estimatedDeliveryAt: populatedOrder.estimatedDeliveryAt,
           });

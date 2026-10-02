@@ -29,6 +29,8 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   httpAgent: stripeAgent,
 });
 const { stopActiveSearch } = require("../sockets/services/order.service");
+// v4.11 — إعادة استخدام الكوبون عند إلغاء الطلب (راجع utils/couponUsage.js)
+const { releaseCouponUseForOrder } = require("../utils/couponUsage");
 const {
   notifyUserOrderStatus,
 } = require("../sockets/services/notification.service");
@@ -953,6 +955,10 @@ exports.cancelOrderByAdmin = async (req, res) => {
     // إيقاف أي بحث سائق نشط — آمنة تُستدعى دايمًا، بترجع فورًا بصمت لو
     // ما في شي أصلاً يحتاج تنظيف (راجع stopActiveSearch بـ order.service.js)
     await stopActiveSearch(io, order._id);
+
+    // v4.11 — الطلب الملغي ما بيستهلك استخدام الكوبون: نعيده (idempotent
+    // وما بترمي — فشله ما بيعطّل الإلغاء). راجع utils/couponUsage.js
+    await releaseCouponUseForOrder(order._id);
 
     // v4.6.3 — لازم نجيب نسخة طازجة بعد stopActiveSearch، مش نكمل نشتغل
     // على متغيّر order القديم: تلك الدالة بتعدّل driverSearchStatus/
